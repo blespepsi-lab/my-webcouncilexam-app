@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Statistics Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.2/css/bootstrap.min.css">
+    <style>
+        body { background-color: #f4f6f9; padding: 25px 0; }
+        .stat-card { border-radius: 8px; border-top: 4px solid #007bff; box-shadow: 0 4px 6px rgba(0,0,0,0.05); background: white; padding: 20px; margin-bottom: 35px; }
+        .matrix-title { font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; word-spacing: 2px; }
+        .table text-center th, .table text-center td { vertical-align: middle !important; }
+        .total-row { background-color: #f8f9fa; font-weight: bold; }
+        th { font-size: 0.85rem; }
+        td { font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-dark font-weight-bold">📊 Registration Summary Dashboard</h2>
+        <a href="/data-entry" class="btn btn-primary font-weight-bold">➕ Back to Entry Form</a>
+    </div>
+
+    <div class="row text-center mb-4">
+        <div class="col-md-2 col-sm-4 mb-3">
+            <div class="card p-3 shadow-sm border-0"><h4 class="text-primary font-weight-bold mb-0">{{ total_churches }}</h4><small class="text-muted font-weight-bold">Total Churches</small></div>
+        </div>
+        <div class="col-md-2 col-sm-4 mb-3">
+            <div class="card p-3 shadow-sm border-0"><h4 class="text-success font-weight-bold mb-0">{{ west_count }}</h4><small class="text-muted font-weight-bold">West Council</small></div>
+        </div>
+        <div class="col-md-2 col-sm-4 mb-3">
+            <div class="card p-3 shadow-sm border-0"><h4 class="text-info font-weight-bold mb-0">{{ east_count }}</h4><small class="text-muted font-weight-bold">East Council</small></div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card p-3 shadow-sm border-0"><h4 class="text-warning font-weight-bold mb-0">{{ headquarters_count }}</h4><small class="text-muted font-weight-bold">Headquarters Type</small></div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card p-3 shadow-sm border-0"><h4 class="text-secondary font-weight-bold mb-0">{{ branch_count }}</h4><small class="text-muted font-weight-bold">Branch Type</small></div>
+        </div>
+    </div>
+
+    <div class="stat-card" style="border-top-color: #007bff;">
+        <h5 class="font-weight-bold text-dark mb-3"> Council & Participant Matrix (Overall Summary)</h5>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped table-hover text-center mb-0">
+                <thead class="bg-dark text-white">
+                    <tr>
+                        <th class="text-left">Category Alignment Group</th>
+                        <th>LKG</th><th>UKG</th><th>I</th><th>II</th><th>III</th><th>IV</th><th>V</th><th>VI</th><th>VII</th><th>VIII</th><th>IX</th><th>X</th><th>XI</th><th>XII</th>
+                        <th class="bg-primary text-white">No. of Teachers</th>
+                        <th class="bg-success text-white">Total Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="font-weight-bold text-left">West - Headquarters</td>
+                        {% for i in range(14) %} <td>{{ west_hq[i] }}</td> {% endfor %}
+                        <td class="font-weight-bold table-primary text-primary">{{ west_hq[14] }}</td>
+                        <td class="font-weight-bold table-success text-success">Rs. {{ west_hq[15] }}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold text-left">West - Branch</td>
+                        {% for i in range(14) %} <td>{{ west_branch[i] }}</td> {% endfor %}
+                        <td class="font-weight-bold table-primary text-primary">{{ west_branch[14] }}</td>
+                        <td class="font-weight-bold table-success text-success">Rs. {{ west_branch[15] }}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold text-left">East - Headquarters</td>
+                        {% for i in range(14) %} <td>{{ east_hq[i] }}</td> {% endfor %}
+                        <td class="font-weight-bold table-primary text-primary">{{ east_hq[14] }}</td>
+                        <td class="font-weight-bold table-success text-success">Rs. {{ east_hq[15] }}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-bold text-left">East - Branch</td>
+                        {% for i in range(14) %} <td>{{ east_branch[i] }}</td> {% endfor %}
+                        <td class="font-weight-bold table-primary text-primary">{{ east_branch[14] }}</td>
+                        <td class="font-weight-bold table-success text-success">Rs. {{ east_branch[15] }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+    {%- macro render_council_matrix(title_label, church_dataset, target_type, border_color) -%}
+    <div class="stat-card" style="border-top-color: {{ border_color }};">
+        <h5 class="text-center text-dark font-weight-bold mb-3 matrix-title">{{ title_label }}</h5>
+        <div class="table-responsive">
+            <table class="table table-bordered table-sm text-center mb-0">
+                <thead class="thead-light">
+                    <tr>
+                        <th style="width: 50px;">S.NO</th>
+                        <th>NAME OF THE CHURCH</th>
+                        <th>PLACE</th>
+                        <th style="width: 80px;">CODE</th>
+                        <th>L.K.G</th>
+                        <th>U.K.G</th>
+                        <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th>
+                        <th class="table-primary text-primary">TOTAL</th>
+                        <th class="table-info text-info">TEACHERS</th>
+                        <th class="table-success text-success">GRAND TOTAL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set ns = namespace(row_num=0, t_lkg=0, t_ukg=0, t_s1=0, t_s2=0, t_s3=0, t_s4=0, t_s5=0, t_s6=0, t_s7=0, t_s8=0, t_s9=0, t_s10=0, t_s11=0, t_s12=0, t_total_students=0, t_teachers=0, t_grand_total=0) %}
+                    
+                    {% for ch in church_dataset %}
+                        {% if ch.headquarters_branch == target_type %}
+                            {% set ns.row_num = ns.row_num + 1 %}
+                            
+                            {% set lkg_val = 1 if ch.lkg_name else 0 %}
+                            {% set ukg_val = 1 if ch.ukg_name else 0 %}
+                            {% set s1_val = 1 if ch.std1_name else 0 %}
+                            {% set s2_val = 1 if ch.std2_name else 0 %}
+                            {% set s3_val = 1 if ch.std3_name else 0 %}
+                            {% set s4_val = 1 if ch.std4_name else 0 %}
+                            {% set s5_val = 1 if ch.std5_name else 0 %}
+                            {% set s6_val = 1 if ch.std6_name else 0 %}
+                            {% set s7_val = 1 if ch.std7_name else 0 %}
+                            {% set s8_val = 1 if ch.std8_name else 0 %}
+                            {% set s9_val = 1 if ch.std9_name else 0 %}
+                            {% set s10_val = 1 if ch.std10_name else 0 %}
+                            {% set s11_val = 1 if ch.std11_name else 0 %}
+                            {% set s12_val = 1 if ch.std12_name else 0 %}
+                            
+                            {% set church_student_total = lkg_val + ukg_val + s1_val + s2_val + s3_val + s4_val + s5_val + s6_val + s7_val + s8_val + s9_val + s10_val + s11_val + s12_val %}
+                            
+                            {% set ns.t_lkg = ns.t_lkg + lkg_val %} {% set ns.t_ukg = ns.t_ukg + ukg_val %}
+                            {% set ns.t_s1 = ns.t_s1 + s1_val %} {% set ns.t_s2 = ns.t_s2 + s2_val %}
+                            {% set ns.t_s3 = ns.t_s3 + s3_val %} {% set ns.t_s4 = ns.t_s4 + s4_val %}
+                            {% set ns.t_s5 = ns.t_s5 + s5_val %} {% set ns.t_s6 = ns.t_s6 + s6_val %}
+                            {% set ns.t_s7 = ns.t_s7 + s7_val %} {% set ns.t_s8 = ns.t_s8 + s8_val %}
+                            {% set ns.t_s9 = ns.t_s9 + s9_val %} {% set ns.t_s10 = ns.t_s10 + s10_val %}
+                            {% set ns.t_s11 = ns.t_s11 + s11_val %} {% set ns.t_s12 = ns.t_s12 + s12_val %}
+                            {% set ns.t_total_students = ns.t_total_students + church_student_total %}
+                            {% set ns.t_teachers = ns.t_teachers + ch.num_teachers %}
+                            {% set ns.t_grand_total = ns.t_grand_total + ch.amount_due %}
+
+                            <tr>
+                                <td>{{ ns.row_num }}</td>
+                                <td class="text-left font-weight-bold text-dark">{{ ch.church_name }}</td>
+                                <td class="text-left"><small>{{ ch.place }}</small></td>
+                                <td class="font-weight-bold text-danger">{{ ch.alphabet_key }}</td>
+                                
+                                <td>{{ lkg_val if lkg_val > 0 else '' }}</td>
+                                <td>{{ ukg_val if ukg_val > 0 else '' }}</td>
+                                <td>{{ s1_val if s1_val > 0 else '' }}</td>
+                                <td>{{ s2_val if s2_val > 0 else '' }}</td>
+                                <td>{{ s3_val if s3_val > 0 else '' }}</td>
+                                <td>{{ s4_val if s4_val > 0 else '' }}</td>
+                                <td>{{ s5_val if s5_val > 0 else '' }}</td>
+                                <td>{{ s6_val if s6_val > 0 else '' }}</td>
+                                <td>{{ s7_val if s7_val > 0 else '' }}</td>
+                                <td>{{ s8_val if s8_val > 0 else '' }}</td>
+                                <td>{{ s9_val if s9_val > 0 else '' }}</td>
+                                <td>{{ s10_val if s10_val > 0 else '' }}</td>
+                                <td>{{ s11_val if s11_val > 0 else '' }}</td>
+                                <td>{{ s12_val if s12_val > 0 else '' }}</td>
+                                
+                                <td class="table-primary font-weight-bold">{{ church_student_total if church_student_total > 0 else '' }}</td>
+                                <td class="table-info font-weight-bold">{{ ch.num_teachers if ch.num_teachers > 0 else '' }}</td>
+                                <td class="table-success font-weight-bold text-right">Rs. {{ ch.amount_due }}</td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if ns.row_num == 0 %}
+                        <tr><td colspan="21" class="text-muted py-3">No matching registration data records found for this block.</td></tr>
+                    {% else %}
+                        <tr class="total-row">
+                            <td></td>
+                            <td></td>
+                            <td class="text-left text-primary font-weight-bold">TOTAL</td>
+                            <td></td>
+                            <td>{{ ns.t_lkg if ns.t_lkg > 0 else 0 }}</td>
+                            <td>{{ ns.t_ukg if ns.t_ukg > 0 else 0 }}</td>
+                            <td>{{ ns.t_s1 if ns.t_s1 > 0 else 0 }}</td>
+                            <td>{{ ns.t_s2 if ns.t_s2 > 0 else 0 }}</td>
+                            <td>{{ ns.t_s3 if ns.t_s3 > 0 else 0 }}</td>
+                            <td>{{ ns.t_s4 if ns.t_s4 > 0 else 0 }}</td>
+                            <td>{{ ns.t_s5 if ns.t_s5 > 0 else 0 }}</td>
+                            <td>{{ ns.t_s6 if ns.t_s6 > 0 else 0 }}</td>
+                            <td>{{ ns.t_s7 if ns.t_s7 > 0 else 0 }}</td>
+                            <td>{{ ns.t_s8 if ns.t_s8 > 0 else 0 }}</td>
+                            <td>{{ ns.t_s9 if ns.t_s9 > 0 else 0 }}</td>
+                            <td>{{ ns.t_s10 if ns.t_s10 > 0 else 0 }}</td>
+                            <td>{{ ns.t_s11 if ns.t_s11 > 0 else 0 }}</td>
+                            <td>{{ ns.t_s12 if ns.t_s12 > 0 else 0 }}</td>
+                            <td class="table-primary text-primary font-weight-bold">{{ ns.t_total_students }}</td>
+                            <td class="table-info text-info font-weight-bold">{{ ns.t_teachers }}</td>
+                            <td class="table-success text-success font-weight-bold text-right">Rs. {{ ns.t_grand_total }}</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {%- endmacro -%}
+
+
+    <h3 class="font-weight-bold text-success mb-3 border-bottom pb-2 mt-4">WEST COUNCIL DETAIL BREAKDOWN</h3>
+    {{ render_council_matrix("WEST COUNCIL & HEADQUARTERS MATRIX", west_churches, "Headquarters", "#28a745") }}
+    {{ render_council_matrix("WEST COUNCIL & BRANCH MATRIX", west_churches, "Branch", "#28a745") }}
+
+    <h3 class="font-weight-bold text-info mb-3 border-bottom pb-2 mt-5">EAST COUNCIL DETAIL BREAKDOWN</h3>
+    {{ render_council_matrix("EAST COUNCIL & HEADQUARTERS MATRIX", east_churches, "Headquarters", "#17a2b8") }}
+    {{ render_council_matrix("EAST COUNCIL & BRANCH MATRIX", east_churches, "Branch", "#17a2b8") }}
+
+</div>
+<div class="card p-3 mb-4 shadow-sm border-0 bg-white no-print">
+    <div class="d-flex flex-wrap align-items-center justify-content-between">
+        <div>
+            <h6 class="font-weight-bold text-dark mb-1">📥 Ledger Export Management Panel</h6>
+            <small class="text-muted">Select an optimized accounting document format below to print or download as an A4 PDF ledger sheet:</small>
+        </div>
+        <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0">
+            <a href="/statistics/print-pdf?option=1" target="_blank" class="btn btn-dark font-weight-bold btn-sm me-2 shadow-sm">
+                📋 Print Overall Summary & 4 Matrices
+            </a>
+            
+            <a href="/statistics/print-pdf?option=3" target="_blank" class="btn btn-outline-primary font-weight-bold btn-sm me-2 shadow-sm">
+                ⛪ Print Church-Wise
+            </a>
+            
+            <a href="/statistics/print-pdf?option=4" target="_blank" class="btn btn-outline-info font-weight-bold btn-sm shadow-sm">
+                📍 Print Standard-Wise Divisions
+            </a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

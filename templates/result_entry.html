@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Competition Result Entry</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
+
+    <style>
+        body { background: #f4f6f9; }
+        .dashboard-card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .winner-box { min-height: 200px; border: 2px dashed #dee2e6; border-radius: 8px; background: #fafafa; padding: 10px; }
+        .remove-btn { font-size: 0.75rem; padding: 2px 8px; }
+    </style>
+</head>
+<body>
+
+<div class="container mt-4 mb-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="/" class="btn btn-outline-secondary">← Back to Home</a>
+        <a href="/result-view" class="btn btn-info text-white">📈 View Live Dashboard</a>
+    </div>
+
+    <div class="dashboard-card">
+        <h2 class="fw-bold text-dark mb-4 border-bottom pb-2">🎯 Scoreboard Placement Entry</h2>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <label class="form-label fw-semibold text-secondary">Council Group</label>
+                <select id="council" class="form-select border-primary-subtle">
+                    <option value="WEST Council">WEST Council</option>
+                    <option value="EAST Council">EAST Council</option>
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label fw-semibold text-secondary">Classification Type</label>
+                <select id="type" class="form-select border-primary-subtle">
+                    <option value="Headquarters">Headquarters</option>
+                    <option value="Branch">Branch</option>
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label fw-semibold text-secondary">Class Standard / Grade</label>
+                <select id="standard" class="form-select border-primary-subtle">
+                    <option value="LKG">LKG</option><option value="UKG">UKG</option>
+                    <option value="I">I</option><option value="II">II</option>
+                    <option value="III">III</option><option value="IV">IV</option>
+                    <option value="V">V</option><option value="VI">VI</option>
+                    <option value="VII">VII</option><option value="VIII">VIII</option>
+                    <option value="IX">IX</option><option value="X">X</option>
+                    <option value="XI">XI</option><option value="XII">XII</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="card bg-light border-0 mb-4">
+            <div class="card-body">
+                <label class="form-label fw-bold text-dark">Select Roster Participant</label>
+                <select id="participant" class="form-control" style="width: 100%;"></select>
+                
+                <div id="participantInfo" class="alert alert-secondary mt-3 mb-0 py-2 font-monospace small">
+                    💡 Choose a valid verified participant registry row configuration...
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mt-2">
+            <div class="col-md-4">
+                <div class="p-3 border rounded bg-white h-100 shadow-sm">
+                    <h5 class="fw-bold text-success border-bottom pb-2 mb-3">🥇 First Place Medal</h5>
+                    <button class="btn btn-sm btn-success w-100 mb-2" onclick="addWinner('first')">+ Allocate FIRST PRIZE</button>
+                    <ul id="firstList" class="list-group winner-box"></ul>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="p-3 border rounded bg-white h-100 shadow-sm">
+                    <h5 class="fw-bold text-primary border-bottom pb-2 mb-3">🥈 Second Place Medal</h5>
+                    <button class="btn btn-sm btn-primary w-100 mb-2" onclick="addWinner('second')">+ Allocate SECOND PRIZE</button>
+                    <ul id="secondList" class="list-group winner-box"></ul>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="p-3 border rounded bg-white h-100 shadow-sm">
+                    <h5 class="fw-bold text-warning border-bottom pb-2 mb-3">🥉 Third Place Medal</h5>
+                    <button class="btn btn-sm btn-warning w-100 mb-2" onclick="addWinner('third')">+ Allocate THIRD PRIZE</button>
+                    <ul id="thirdList" class="list-group winner-box"></ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-end border-top mt-5 pt-3">
+            <button class="btn btn-danger btn-lg px-5 fw-bold shadow" onclick="saveResults()">
+                🚀 Save Grand Championship Placements
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+let selectedIds = [];
+let firstPrize = [];
+let secondPrize = [];
+let thirdPrize = [];
+let participantsMap = {};
+
+// Clean programmatic reset layer to eliminate variable mutation leaks across category loads
+function clearPlacementState() {
+    selectedIds = [];
+    firstPrize = [];
+    secondPrize = [];
+    thirdPrize = [];
+    participantsMap = {};
+    
+    document.getElementById("firstList").innerHTML = "";
+    document.getElementById("secondList").innerHTML = "";
+    document.getElementById("thirdList").innerHTML = "";
+    document.getElementById("participantInfo").className = "alert alert-secondary mt-3 mb-0 py-2 font-monospace small";
+    document.getElementById("participantInfo").innerHTML = "💡 Choose a valid verified participant registry row configuration...";
+}
+
+function loadParticipants() {
+    clearPlacementState();
+
+    const council = document.getElementById("council").value;
+    const type = document.getElementById("type").value;
+    const standard = document.getElementById("standard").value;
+
+    fetch(`/get-participants?council=${encodeURIComponent(council)}&type=${encodeURIComponent(type)}&standard=${encodeURIComponent(standard)}`)
+    .then(r => r.json())
+    .then(data => {
+        let ddl = $("#participant");
+        
+        // Teardown the instances cleanly before running modifications
+        ddl.select2('destroy').html(''); 
+
+        if (data.length === 0) {
+            ddl.append(new Option("No registered students found matching these specifications", "", true, true));
+            ddl.select2({ disabled: true });
+            return;
+        }
+
+        ddl.select2({ disabled: false });
+        ddl.append(new Option("-- Choose Nominee Registration Entry --", "", true, true));
+
+        data.forEach(item => {
+            participantsMap[item.id] = item;
+            let displayString = `[${item.id}] ${item.name} (${item.church}, ${item.place})`;
+            ddl.append(new Option(displayString, item.id, false, false));
+        });
+
+        ddl.trigger('change');
+    });
+}
+
+function showParticipantInfo() {
+    let id = document.getElementById("participant").value;
+
+    if (!id || !participantsMap[id]) return;
+
+    let p = participantsMap[id];
+    let infoBox = document.getElementById("participantInfo");
+    
+    infoBox.className = "alert alert-info mt-3 mb-0 py-2 font-monospace small";
+    infoBox.innerHTML = `🏁 <strong>ID:</strong> ${p.id} | <strong>Nominee:</strong> ${p.name} | <strong>Church:</strong> ${p.church} | <strong>Region:</strong> ${p.place}`;
+}
+
+function addWinner(prize) {
+    let id = document.getElementById("participant").value;
+
+    if (!id) {
+        alert("Action Aborted: Please select a valid student participant row mapping first.");
+        return;
+    }
+
+    if (selectedIds.includes(id)) {
+        alert("Duplicate Conflict: This student has already been allocated a placement medal in this event category.");
+        return;
+    }
+
+    let p = participantsMap[id];
+    selectedIds.push(id);
+
+    let arr = prize === "first" ? firstPrize : (prize === "second" ? secondPrize : thirdPrize);
+    arr.push(p);
+
+    let listId = prize === "first" ? "firstList" : (prize === "second" ? "secondList" : "thirdList");
+    let li = document.createElement("li");
+    li.className = "list-group-item d-flex justify-content-between align-items-center small p-2 fw-semibold";
+    li.innerHTML = `
+        <div>${p.name} <span class="text-muted d-block" style="font-size:0.7rem;">ID: ${p.id}</span></div>
+        <button class="btn btn-danger btn-sm remove-btn" onclick="removeWinner('${prize}','${p.id}',this)">✕</button>
+    `;
+
+    document.getElementById(listId).appendChild(li);
+}
+
+function removeWinner(prize, id, btn) {
+    selectedIds = selectedIds.filter(x => x !== id);
+
+    if (prize === "first") firstPrize = firstPrize.filter(x => x.id !== id);
+    if (prize === "second") secondPrize = secondPrize.filter(x => x.id !== id);
+    if (prize === "third") thirdPrize = thirdPrize.filter(x => x.id !== id);
+
+    btn.parentElement.remove();
+}
+
+function saveResults() {
+    const council = document.getElementById("council").value;
+    const type = document.getElementById("type").value;
+    const standard = document.getElementById("standard").value;
+
+    const payload = {
+        council: council,
+        headquarters_branch: type,
+        standard: standard,
+        first: firstPrize,
+        second: secondPrize,
+        third: thirdPrize
+    };
+
+    fetch("/save-results", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === "success") {
+            alert(`Placements successfully committed for ${standard} Standard (${council})!`);
+            window.location.href = "/result-view";
+        } else {
+            alert("Error Processing Save Request: " + data.message);
+        }
+    });
+}
+
+$(document).ready(function() {
+    $('#participant').select2();
+    
+    document.getElementById("council").addEventListener("change", loadParticipants);
+    document.getElementById("type").addEventListener("change", loadParticipants);
+    document.getElementById("standard").addEventListener("change", loadParticipants);
+    $('#participant').on('change', showParticipantInfo);
+
+    loadParticipants();
+});
+</script>
+
+</body>
+</html>

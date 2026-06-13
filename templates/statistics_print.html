@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Print Report - {{ title }}</title>
+    <meta charset="utf-8">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Absolute Global Typography Standard Configuration */
+        body { background-color: #fff; color: #000; font-size: 12pt !important; line-height: 1.4; }
+        .print-header { border-bottom: 3px double #000; margin-bottom: 25px; padding-bottom: 10px; }
+        
+        /* Clear and Legible Table Standards */
+        table { font-size: 12pt !important; width: 100% !important; margin-bottom: 20px; table-layout: fixed; border-collapse: collapse; }
+        th, td { padding: 6px 8px !important; vertical-align: middle !important; border: 1.5px solid #000 !important; height: 32px; }
+        th { background-color: #f2f2f2 !important; color: #000 !important; font-weight: bold; text-transform: uppercase; }
+        
+        /* Structured Layout Cards for Option 3 Single Layout Pages */
+        .church-card-container { page-break-after: always; margin-bottom: 40px; }
+        .church-title-block { background-color: #eef2f7 !important; padding: 10px; border: 1.5px solid #000; font-weight: bold; font-size: 13pt; margin-bottom: 10px; }
+        .total-row { background-color: #fafafa !important; font-weight: bold; }
+        
+        /* Rigorous Explicit Width Targets for Clear Information Display */
+        .col-std { width: 18% !important; }
+        .col-code { width: 18% !important; }
+        .col-name { width: 44% !important; text-align: left !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .col-remarks { width: 20% !important; }
+        
+        /* Custom layout rule to enforce rigid clean single-page breaks per Standard item */
+        .standard-page-container {
+            page-break-before: always;
+            page-break-inside: avoid;
+            padding-top: 10px;
+        }
+        
+        @media print {
+            .no-print { display: none !important; }
+            body { padding: 0 !important; margin: 0 !important; }
+            @page { size: A4 portrait; margin: 15mm 12mm; }
+        }
+    </style>
+</head>
+<body class="p-4">
+
+    <!-- TOP DASHBOARD NAVIGATION ACTION CONTROL PANEL BAR -->
+    <div class="d-flex justify-content-between align-items-center bg-light p-3 border rounded mb-4 no-print">
+        <div>
+            <span class="fw-bold text-dark text-uppercase small" style="font-size: 10pt;">Ready for Export:</span>
+            <h5 class="mb-0 text-primary fw-bold">{{ title }}</h5>
+        </div>
+        <div>
+            <a href="/statistics" class="btn btn-outline-secondary me-2">← Back to Dashboard</a>
+            <button class="btn btn-dark fw-bold px-4" onclick="window.print()">Download PDF / Print</button>
+        </div>
+    </div>
+
+    <!-- MAIN REPORT PAGE SYSTEM HEADER BRANDING -->
+    <div class="print-header text-center">
+        <h2 class="fw-bold tracking-tight mb-1">Satchiapuram Local Council Scripture Exam Details - 2026</h2>
+        <h5 class="text-secondary uppercase small fw-semibold">{{ title }}</h5>
+    </div>
+
+
+    <!-- ========================================================================== -->
+    <!-- MACRO DECLARATION FOR RENDERING MATRIX (OPTION 1 & 2)                      -->
+    <!-- ========================================================================== -->
+    {%- macro render_print_matrix(label, dataset, target_type) -%}
+    <div style="page-break-before: always; padding-top: 15px;">
+        <h5 class="fw-bold text-uppercase text-center mb-3"> {{ label }}</h5>
+        <table class="table table-bordered text-center align-middle" style="table-layout: auto;">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">S.NO</th>
+                    <th class="text-start">NAME OF THE CHURCH</th>
+                    <th class="text-start">PLACE</th>
+                    <th style="width: 70px;">CODE</th>
+                    <th>LKG</th><th>UKG</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th>
+                    <th>TOTAL</th>
+                    <th>TEACH</th>
+                    <th class="text-end" style="width: 110px;">GRAND TOTAL</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set ns = namespace(row_num=0, t_lkg=0, t_ukg=0, t_s1=0, t_s2=0, t_s3=0, t_s4=0, t_s5=0, t_s6=0, t_s7=0, t_s8=0, t_s9=0, t_s10=0, t_s11=0, t_s12=0, t_students=0, t_teachers=0, t_cash=0) %}
+                {% for ch in dataset %}
+                    {% if ch.headquarters_branch == target_type %}
+                        {% set ns.row_num = ns.row_num + 1 %}
+                        {% set lkg_v = 1 if ch.lkg_name else 0 %} 
+                        {% set ukg_v = 1 if ch.ukg_name else 0 %}
+                        {% set s1_v = 1 if ch.std1_name else 0 %} 
+                        {% set s2_v = 1 if ch.std2_name else 0 %}
+                        {% set s3_v = 1 if ch.std3_name else 0 %} 
+                        {% set s4_v = 1 if ch.std4_name else 0 %}
+                        {% set s5_v = 1 if ch.std5_name else 0 %} 
+                        {% set s6_v = 1 if ch.std6_name else 0 %}
+                        {% set s7_v = 1 if ch.std7_name else 0 %} 
+                        {% set s8_v = 1 if ch.std8_name else 0 %}
+                        {% set s9_v = 1 if ch.std9_name else 0 %} 
+                        {% set s10_v = 1 if ch.std10_name else 0 %}
+                        {% set s11_v = 1 if ch.std11_name else 0 %} 
+                        {% set s12_v = 1 if ch.std12_name else 0 %}
+                        
+                        {% set row_student_total = lkg_v + ukg_v + s1_v + s2_v + s3_v + s4_v + s5_v + s6_v + s7_v + s8_v + s9_v + s10_v + s11_v + s12_v %}
+                        
+                        {% set ns.t_lkg = ns.t_lkg + lkg_v %} 
+                        {% set ns.t_ukg = ns.t_ukg + ukg_v %}
+                        {% set ns.t_s1 = ns.t_s1 + s1_v %} 
+                        {% set ns.t_s2 = ns.t_s2 + s2_v %}
+                        {% set ns.t_s3 = ns.t_s3 + s3_v %} 
+                        {% set ns.t_s4 = ns.t_s4 + s4_v %}
+                        {% set ns.t_s5 = ns.t_s5 + s5_v %} 
+                        {% set ns.t_s6 = ns.t_s6 + s6_v %}
+                        {% set ns.t_s7 = ns.t_s7 + s7_v %}
+                        {% set ns.t_s8 = ns.t_s8 + s8_v %}
+                        {% set ns.t_s9 = ns.t_s9 + s9_v %} 
+                        {% set ns.t_s10 = ns.t_s10 + s10_v %}
+                        {% set ns.t_s11 = ns.t_s11 + s11_v %} 
+                        {% set ns.t_s12 = ns.t_s12 + s12_v %}
+                        
+                        {% set ns.t_students = ns.t_students + row_student_total %}
+                        {% set ns.t_teachers = ns.t_teachers + ch.num_teachers %}
+                        {% set ns.t_cash = ns.t_cash + ch.amount_due %}
+                        <tr>
+                            <td>{{ ns.row_num }}</td>
+                            <td class="text-start fw-bold">{{ ch.church_name }}</td>
+                            <td class="text-start">{{ ch.place }}</td>
+                            <td class="fw-bold font-monospace text-danger">{{ ch.alphabet_key }}</td>
+                            <td>{{ lkg_v if lkg_v > 0 else '' }}</td><td>{{ ukg_v if ukg_v > 0 else '' }}</td>
+                            <td>{{ s1_v if s1_v > 0 else '' }}</td><td>{{ s2_v if s2_v > 0 else '' }}</td>
+                            <td>{{ s3_v if s3_v > 0 else '' }}</td><td>{{ s4_v if s4_v > 0 else '' }}</td>
+                            <td>{{ s5_v if s5_v > 0 else '' }}</td><td>{{ s6_v if s6_v > 0 else '' }}</td>
+                            <td>{{ s7_v if s7_v > 0 else '' }}</td><td>{{ s8_v if s8_v > 0 else '' }}</td>
+                            <td>{{ s9_v if s9_v > 0 else '' }}</td><td>{{ s10_v if s10_v > 0 else '' }}</td>
+                            <td>{{ s11_v if s11_v > 0 else '' }}</td><td>{{ s12_v if s12_v > 0 else '' }}</td>
+                            <td class="fw-bold bg-light">{{ row_student_total if row_student_total > 0 else '' }}</td>
+                            <td class="fw-bold bg-light">{{ ch.num_teachers if ch.num_teachers > 0 else '' }}</td>
+                            <td class="text-end fw-bold bg-light">Rs. {{ ch.amount_due }}</td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+                <tr class="total-row table-secondary">
+                    <td colspan="4" class="text-end fw-bold">TOTAL:</td>
+                    <td>{{ ns.t_lkg }}</td><td>{{ ns.t_ukg }}</td><td>{{ ns.t_s1 }}</td><td>{{ ns.t_s2 }}</td>
+                    <td>{{ ns.t_s3 }}</td><td>{{ ns.t_s4 }}</td><td>{{ ns.t_s5 }}</td><td>{{ ns.t_s6 }}</td>
+                    <td>{{ ns.t_s7 }}</td><td>{{ ns.t_s8 }}</td><td>{{ ns.t_s9 }}</td><td>{{ ns.t_s10 }}</td>
+                    <td>{{ ns.t_s11 }}</td><td>{{ ns.t_s12 }}</td>
+                    <td class="text-primary fw-bold">{{ ns.t_students }}</td>
+                    <td class="text-info fw-bold">{{ ns.t_teachers }}</td>
+                    <td class="text-end text-success fw-bold">Rs. {{ ns.t_cash }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    {%- endmacro -%}
+
+
+    <!-- ========================================================================== -->
+    <!-- OPTIONS 1 & 2: OVERALL SUMMARY TALLY MATRIX AND 4 INDIVIDUAL MATRICES      -->
+    <!-- ========================================================================== -->
+    {% if option == "1" or option == "2" %}
+    <div class="mb-4">
+        <h5 class="fw-bold text-uppercase text-center mb-3">Council & Participant Matrix (Overall Summary)</h5>
+        <table class="table table-bordered text-center align-middle" style="table-layout: auto;">
+            <thead class="table-dark">
+                <tr>
+                    <th class="text-start">Council Group Allocation</th>
+                    {% for std in standards %} <th>{{ std }}</th> {% endfor %}
+                    <th>Teachers</th>
+                    <th>Total Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="text-start fw-bold bg-light">West - Headquarters</td>
+                    {% for count in overall_summary.West_Headquarters[:14] %} <td>{{ count }}</td> {% endfor %}
+                    <td class="fw-bold text-primary">{{ overall_summary.West_Headquarters[14] }}</td>
+                    <td class="fw-bold text-success text-end">Rs. {{ overall_summary.West_Headquarters[15] }}</td>
+                </tr>
+                <tr>
+                    <td class="text-start fw-bold bg-light">West - Branch</td>
+                    {% for count in overall_summary.West_Branch[:14] %} <td>{{ count }}</td> {% endfor %}
+                    <td class="fw-bold text-primary">{{ overall_summary.West_Branch[14] }}</td>
+                    <td class="fw-bold text-success text-end">Rs. {{ overall_summary.West_Branch[15] }}</td>
+                </tr>
+                <tr>
+                    <td class="text-start fw-bold bg-light">East - Headquarters</td>
+                    {% for count in overall_summary.East_Headquarters[:14] %} <td>{{ count }}</td> {% endfor %}
+                    <td class="fw-bold text-primary">{{ overall_summary.East_Headquarters[14] }}</td>
+                    <td class="fw-bold text-success text-end">Rs. {{ overall_summary.East_Headquarters[15] }}</td>
+                </tr>
+                <tr>
+                    <td class="text-start fw-bold bg-light">East - Branch</td>
+                    {% for count in overall_summary.East_Branch[:14] %} <td>{{ count }}</td> {% endfor %}
+                    <td class="fw-bold text-primary">{{ overall_summary.East_Branch[14] }}</td>
+                    <td class="fw-bold text-success text-end">Rs. {{ overall_summary.East_Branch[15] }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    {{ render_print_matrix("WEST COUNCIL & HEADQUARTERS MATRIX", west_churches, "Headquarters") }}
+    {{ render_print_matrix("WEST COUNCIL & BRANCH MATRIX", west_churches, "Branch") }}
+    {{ render_print_matrix("EAST COUNCIL & HEADQUARTERS MATRIX", east_churches, "Headquarters") }}
+    {{ render_print_matrix("EAST COUNCIL & BRANCH MATRIX", east_churches, "Branch") }}
+    {% endif %}
+
+
+    <!-- ========================================================================== -->
+    <!-- HIGH VISIBILITY OPTION 3: 12PT FULL WIDTH WITH BLANK SPACES FOR EMPTY SLOTS-->
+    <!-- ========================================================================== -->
+    {% if option == "3" %}
+        {% for category in data %}
+            {% for church in category.churches %}
+            <div class="church-card-container">
+                
+                <div class="text-start text-secondary fw-bold mb-2 text-uppercase tracking-wider" style="font-size:11pt;">
+                     {{ category.label }}
+                </div>
+
+                <div class="church-title-block d-flex justify-content-between align-items-center">
+                    <span>⛪ CHURCH: {{ church.meta.church_name|upper }}</span>
+                    <span>PLACE: {{ church.meta.place|upper }}</span>
+                </div>
+                
+                <table class="table table-bordered text-center align-middle table-fixed-roster">
+                    <thead>
+                        <tr>
+                            <th class="col-std">STANDARDS</th>
+                            <th class="col-code">CODE</th>
+                            <th class="col-name text-start">PARTICIPANT NAME</th>
+                            <th class="col-remarks">REMARKS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in church.roster %}
+                        <tr>
+                            {% if item.type == 'student' %}
+                                <td class="col-std fw-bold font-monospace bg-light">STD {{ item.standard }}</td>
+                                <td class="col-code font-monospace fw-bold text-danger">{{ item.id }}</td>
+                                <td class="col-name fw-bold text-dark">{{ item.name }}</td>
+                            {% else %}
+                                <td class="col-std fw-bold font-monospace text-primary bg-light" style="background-color: #f0f4f8 !important;">STAFF</td>
+                                <td class="col-code font-monospace fw-bold text-primary">{{ item.id }}</td>
+                                <td class="col-name fw-bold text-primary">{{ item.name }}</td>
+                            {% endif %}
+                            <td class="col-remarks"></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                
+                <div class="d-flex justify-content-between font-monospace text-muted px-1" style="font-size:10pt; margin-top: -10px;">
+                    <span>Total Staff Members Logged: {{ church.teacher_count }}</span>
+                    <span>Reference ID: CS-{{ church.meta.id }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        {% endfor %}
+    {% endif %}
+
+
+    <!-- ========================================================================== -->
+    <!-- UPDATED OPTION 4: RIGID SINGLE INDIVIDUAL PAGE BREAK PER CLASS STANDARD    -->
+    <!-- ========================================================================== -->
+    {% if option == "4" %}
+        {% for division_label, standards_dict in data.items() %}
+            {% for std in standards %}
+                {% if standards_dict[std] %}
+                <!-- Strict single class container block forced onto an individual print canvas sheet -->
+                <div class="standard-page-container">
+                    <div class="text-start text-secondary fw-bold mb-2 text-uppercase tracking-wider" style="font-size:11pt; border-bottom: 2px solid #000; padding-bottom: 4px;">
+                         GROUP: {{ division_label|upper }}
+                    </div>
+                    
+                    <h5 class="fw-bold text-primary mb-3 mt-1">Standard: Class Level {{ std }}</h5>
+                    <table class="table table-bordered align-middle text-center mb-0" style="table-layout: auto;">
+                        <thead>
+                            <tr>
+                                <th style="width: 130px;">CODE</th>
+                                <th class="text-start">NAME OF THE CHURCH</th>
+                                <th class="text-start">PLACE</th>
+                                <th class="text-start">NAME</th>
+                                <th style="width: 250px;">REMARKS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in standards_dict[std] %}
+                            <tr>
+                                <td class="font-monospace fw-bold text-danger text-center">{{ student.sid }}</td>
+                                <td class="text-start fw-bold text-dark">{{ student.church_name }}</td>
+                                <td class="text-start">{{ student.place }}</td>
+                                <td class="text-start fw-bold text-primary">{{ student.sname }}</td>
+                                <td></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+            {% endfor %}
+        {% endfor %}
+    {% endif %}
+
+</body>
+</html>

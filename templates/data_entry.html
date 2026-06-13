@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Entry Form</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #f4f6f9; }
+        .form-card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .section-title { font-weight: 700; color: #495057; border-bottom: 2px solid #e9ecef; padding-bottom: 8px; margin-bottom: 20px; }
+        .student-field { background-color: #fafafa; }
+    </style>
+</head>
+<body>
+
+<div class="container mt-4 mb-5">
+
+    <a href="/" class="btn btn-outline-secondary mb-4">← Back to Home</a>
+
+    <div class="form-card">
+        <h2 class="mb-4 text-primary fw-bold">⛪ Church Registration Entry Form</h2>
+
+        <form action="/save" method="POST" onsubmit="forceUppercaseKey()">
+
+            <h4 class="section-title">Select...</h4>
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Church Name</label>
+                    <input type="text" class="form-control" name="church_name" required placeholder="e.g., CSI St. Paul's Church">
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Council Group Assignment</label>
+                    <select class="form-select" id="council" name="council" required onchange="updateLocationDropdown()">
+                        <option value="">-- Choose Council --</option>
+                        <option value="WEST Council">WEST Council</option>
+                        <option value="EAST Council">EAST Council</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Type Classification</label>
+                    <select class="form-select" id="headquarters_branch" name="headquarters_branch" required onchange="updateLocationDropdown()">
+                        <option value="">-- Choose Type --</option>
+                        <option value="Headquarters">Headquarters</option>
+                        <option value="Branch">Branch</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Place / Town / City Location</label>
+                    <select class="form-select" id="place_dropdown" name="place_dropdown" required onchange="checkLocationOthers()">
+                        <option value="">-- Choose Council & Type First --</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4 d-none" id="custom_place_container">
+                    <label class="form-label fw-semibold text-danger">Type Custom Location Name</label>
+                    <input type="text" class="form-control" id="custom_place" name="custom_place" placeholder="Enter new location name">
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Unique Key (A-Z)</label>
+                    <input type="text" 
+                           id="alphabet_key"
+                           maxlength="1" 
+                           pattern="[A-Za-z]" 
+                           class="form-control font-monospace fw-bold text-center" 
+                           name="alphabet_key" 
+                           required 
+                           placeholder="X"
+                           style="text-transform:uppercase">
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold text-primary">No. of Teachers</label>
+                    <input type="number" id="num_teachers" class="form-control" name="num_teachers" min="0" max="25" value="0" required oninput="generateTeacherFields()">
+                </div>
+            </div>
+
+            <div id="teacher-names-section" class="mb-4 d-none">
+                <h5 class="text-secondary fw-bold small mb-2">Teacher Names</h5>
+                <div id="teacher-fields-container" class="row g-2"></div>
+            </div>
+<div class="form-group">
+    <label for="payment_status"><strong>Registration Fee Payment Status:</strong></label>
+    <select name="payment_status" id="payment_status" class="form-control" style="max-width: 150px;">
+        <option value="No" selected>No</option>
+        <option value="Yes">Yes</option>
+    </select>
+</div>      <h4 class="section-title mt-4">Active Competition Student Nominations</h4>
+            <p class="text-muted small mb-3">Leave individual fields completely blank if a church branch has no student participating in that grade level.</p>
+            
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-secondary">LKG Class Standard</label>
+                    <input type="text" class="form-control student-field" name="lkg_name" placeholder="Student Full Name">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-secondary">UKG Class Standard</label>
+                    <input type="text" class="form-control student-field" name="ukg_name" placeholder="Student Full Name">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-secondary">Grade I Standard</label>
+                    <input type="text" class="form-control student-field" name="std1_name" placeholder="Student Full Name">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-secondary">Grade II Standard</label>
+                    <input type="text" class="form-control student-field" name="std2_name" placeholder="Student Full Name">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-secondary">Grade III Standard</label>
+                    <input type="text" class="form-control student-field" name="std3_name" placeholder="Student Full Name">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-secondary">Grade IV Standard</label>
+                    <input type="text" class="form-control student-field" name="std4_name" placeholder="Student Full Name">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-secondary">Grade V Standard</label>
+                    <input type="text" class="form-control student-field" name="std5_name" placeholder="Student Full Name">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-secondary">Grade VI Standard</label>
+                    <input type="text" class="form-control student-field" name="std6_name" placeholder="Student Full Name">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-secondary">Grade VII Standard</label>
+                    <input type="text" class="form-control student-field" name="std7_name" placeholder="Student Full Name">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-secondary">Grade VIII Standard</label>
+                    <input type="text" class="form-control student-field" name="std8_name" placeholder="Student Full Name">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-secondary">Grade IX Standard</label>
+                    <input type="text" class="form-control student-field" name="std9_name" placeholder="Student Full Name">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-secondary">Grade X Standard</label>
+                    <input type="text" class="form-control student-field" name="std10_name" placeholder="Student Full Name">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-secondary">Grade XI Standard</label>
+                    <input type="text" class="form-control student-field" name="std11_name" placeholder="Student Full Name">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-secondary">Grade XII Standard</label>
+                    <input type="text" class="form-control student-field" name="std12_name" placeholder="Student Full Name">
+                </div>
+            </div>
+
+            <div class="text-end border-top mt-4 pt-3">
+                <button type="submit" class="btn btn-success btn-lg px-5">
+                    💾 Save Records 
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+</div>
+
+<script>
+// Data Lookup Matrices Matching Council/Type Layout Configurations
+const locationData = {
+    "EAST Council": {
+        "Headquarters": [
+            "VIRUDHUNAGAR", "THAMMANAICKAN PATTI", "SATTUR", 
+            "ELAYIRAM PANNI", "PANAIYADI PATTI", "THAYIL PATTI", 
+            "SIVAKASI RURAL-VILAMPATTI", "THIRUTHANGAL", "SIVAKASI EAST"
+        ],
+        "Branch": [
+            "EAST ELAIYIRAM PANNI", "KALAIYAR KURCHI", "KATNR PATTI", 
+            "PERA PATTI", "RAMACHNDRAPURAM", "PANDIAN NAGAR", "MATHAM PATTI"
+        ]
+    },
+    "WEST Council": {
+        "Headquarters": [
+            "SIVAKASI - TOWN", "SIVAKASI - WEST", "SATCHIYAPURAM", 
+            "ATHIKULAM", "SRIVI", "PATTAKULAM", "WATRAP", 
+            "RAJAPALAYAM", "RAJAPALAYAM - SOUTH"
+        ],
+        "Branch": [
+            "ALAAGUDIVENDRAPURAM", "KONTHARAYANKULAM", "KOOMAPATTI", 
+            "KOTHANKULAM", "SOMYAIYAPURAM", "THIRUVALLUVAR NAGAR", 
+            "KADDANERI", "V.O.C. NAGAR", "CHOLOPURAM", "GRAHATHAAMMAL NAGAR", "SAMINATHAM"
+        ]
+    }
+};
+
+function updateLocationDropdown() {
+    const council = document.getElementById("council").value;
+    const type = document.getElementById("headquarters_branch").value;
+    const placeDropdown = document.getElementById("place_dropdown");
+    
+    // Clear out current configurations
+    placeDropdown.innerHTML = '<option value="">-- Choose Location --</option>';
+    
+    // Safety reset on custom input elements
+    document.getElementById("custom_place_container").classList.add("d-none");
+    document.getElementById("custom_place").removeAttribute("required");
+
+    if (council && type && locationData[council] && locationData[council][type]) {
+        const options = locationData[council][type];
+        
+        // Loop through array elements to build standard selections
+        options.forEach(place => {
+            const opt = document.createElement("option");
+            opt.value = place;
+            opt.textContent = place;
+            placeDropdown.appendChild(opt);
+        });
+        
+        // Append the alternative "Others" fallback option at the end
+        const othersOpt = document.createElement("option");
+        othersOpt.value = "Others";
+        othersOpt.textContent = "Others (Type a custom location)";
+        placeDropdown.appendChild(othersOpt);
+    } else {
+        placeDropdown.innerHTML = '<option value="">-- Choose Council & Type First --</option>';
+    }
+}
+
+function checkLocationOthers() {
+    const dropdown = document.getElementById("place_dropdown");
+    const customContainer = document.getElementById("custom_place_container");
+    const customInput = document.getElementById("custom_place");
+
+    if (dropdown.value === "Others") {
+        customContainer.classList.remove("d-none");
+        customInput.setAttribute("required", "required");
+        customInput.focus();
+    } else {
+        customContainer.classList.add("d-none");
+        customInput.removeAttribute("required");
+        customInput.value = ""; 
+    }
+}
+
+function generateTeacherFields() {
+    const numTeachers = parseInt(document.getElementById('num_teachers').value) || 0;
+    const container = document.getElementById('teacher-fields-container');
+    const section = document.getElementById('teacher-names-section');
+    container.innerHTML = '';
+    
+    if (numTeachers > 0) {
+        section.classList.remove('d-none');
+        for (let i = 1; i <= numTeachers; i++) {
+            const col = document.createElement('div');
+            col.className = 'col-md-4';
+            col.innerHTML = `<input type="text" class="form-control" name="teacher_names[]" placeholder="Teacher ${i} Full Name" required>`;
+            container.appendChild(col);
+        }
+    } else {
+        section.classList.add('d-none');
+    }
+}
+
+function forceUppercaseKey() {
+    const keyField = document.getElementById("alphabet_key");
+    if(keyField) {
+        keyField.value = keyField.value.toUpperCase();
+    }
+}
+</script>
+
+</body>
+</html>
