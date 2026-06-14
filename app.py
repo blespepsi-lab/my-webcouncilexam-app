@@ -13,13 +13,6 @@ def get_connection():
     return conn
 
 
-
-@app.route("/download_db")
-def download_db():
-    return send_file(
-        "church_v3.db",
-        as_attachment=True
-    )
 def repair_database_entries():
     """
     Automated Data Cleanup Patch:
@@ -372,6 +365,13 @@ def print_statistics_pdf():
 
 @app.route("/result-entry")
 def result_entry(): return render_template("result_entry.html")
+
+@app.route("/download_db")
+def download_db():
+    return send_file(
+        "church_v3.db",
+        as_attachment=True
+    )
 
 if __name__ == "__main__":
     repair_database_entries()
