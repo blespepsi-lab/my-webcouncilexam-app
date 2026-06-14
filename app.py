@@ -375,6 +375,17 @@ def download_db():
 @app.route("/hello")
 def hello():
     return "Hello"
+@app.route("/clear_database")
+def clear_database():
+    conn = sqlite3.connect("church_v3.db")
+
+    conn.execute("DELETE FROM church_schools")
+    conn.execute("DELETE FROM competition_results")
+
+    conn.commit()
+    conn.close()
+
+    return "Database cleared successfully"
 @app.route("/show_churches")
 def show_churches():
     conn = sqlite3.connect("church_v3.db")
