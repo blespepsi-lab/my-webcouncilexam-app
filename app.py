@@ -372,6 +372,9 @@ def download_db():
         "church_v3.db",
         as_attachment=True
     )
+@app.route("/hello")
+def hello():
+    return "Hello"
 
 if __name__ == "__main__":
     repair_database_entries()
