@@ -375,6 +375,18 @@ def download_db():
 @app.route("/hello")
 def hello():
     return "Hello"
+@app.route("/show_churches")
+def show_churches():
+    conn = sqlite3.connect("church_v3.db")
+    conn.row_factory = sqlite3.Row
+
+    rows = conn.execute(
+        "SELECT * FROM church_schools LIMIT 20"
+    ).fetchall()
+
+    conn.close()
+
+    return jsonify([dict(r) for r in rows])
 
 if __name__ == "__main__":
     repair_database_entries()
