@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify
 import sqlite3
 from collections import defaultdict
 import json
-
+from flask import send_file
 app = Flask(__name__)
 DATABASE = "church_v3.db"
 
@@ -13,6 +13,13 @@ def get_connection():
     return conn
 
 
+
+@app.route("/download_db")
+def download_db():
+    return send_file(
+        "church_v3.db",
+        as_attachment=True
+    )
 def repair_database_entries():
     """
     Automated Data Cleanup Patch:
