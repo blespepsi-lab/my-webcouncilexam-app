@@ -1,8 +1,8 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_file
 import sqlite3
 from collections import defaultdict
 import json
-from flask import send_file
+
 app = Flask(__name__)
 DATABASE = "church_v3.db"
 
@@ -29,7 +29,9 @@ def repair_database_entries():
             result_id = row["result_id"]
             correct_std = None
 
-            if p_id.endswith("0L"):
+            if "-T" in p_id:
+                correct_std = "TEACHER"
+            elif p_id.endswith("0L"):
                 correct_std = "LKG"
             elif p_id.endswith("0U"):
                 correct_std = "UKG"
@@ -72,7 +74,6 @@ def repair_database_entries():
         print(f"Automatic data validation warning: {e}")
     finally:
         conn.close()
-
 
 @app.route("/save", methods=["POST"])
 def save():
@@ -294,7 +295,6 @@ def print_statistics_pdf():
             group_churches = []
             for ch in churches:
                 roster = []
-                # MODIFIED: Always include all 14 standards. Leave name blank if None.
                 for std in standards_list:
                     id_col, name_col = mapping[std]
                     raw_name = ch[name_col]
@@ -364,7 +364,9 @@ def print_statistics_pdf():
 
 
 @app.route("/result-entry")
-def result_entry(): return render_template("result_entry.html")
+def result_entry(): 
+    return render_template("result_entry.html")
+
 
 @app.route("/download_db")
 def download_db():
@@ -372,33 +374,322 @@ def download_db():
         "church_v3.db",
         as_attachment=True
     )
+
+
 @app.route("/hello")
 def hello():
     return "Hello"
-@app.route("/clear_database")
-def clear_database():
-    conn = sqlite3.connect("church_v3.db")
 
-    conn.execute("DELETE FROM church_schools")
-    conn.execute("DELETE FROM competition_results")
-
-    conn.commit()
-    conn.close()
-
-    return "Database cleared successfully"
 @app.route("/show_churches")
 def show_churches():
     conn = sqlite3.connect("church_v3.db")
     conn.row_factory = sqlite3.Row
-
-    rows = conn.execute(
-        "SELECT * FROM church_schools LIMIT 20"
-    ).fetchall()
-
+    rows = conn.execute("SELECT * FROM church_schools LIMIT 20").fetchall()
     conn.close()
-
     return jsonify([dict(r) for r in rows])
 
+
+@app.route("/get-participants")
+def get_participants():
+    council = request.args.get("council", "").strip()
+    type_val = request.args.get("type", "").strip()  
+    standard = request.args.get("standard", "").strip()
+
+    conn = get_connection()
+
+    # --- SPECIAL HANDLING FOR TEACHERS ---
+    if standard == "TEACHER":
+        query = """
+            SELECT alphabet_key, teacher_names, church_name, place 
+            FROM church_schools 
+            WHERE TRIM(council) LIKE ? 
+              AND TRIM(headquarters_branch) LIKE ? 
+              AND teacher_names IS NOT NULL 
+              AND teacher_names != '' AND teacher_names != '[]'
+            ORDER BY alphabet_key ASC, church_name ASC
+        """
+        rows = conn.execute(query, (council, type_val)).fetchall()
+        conn.close()
+
+        output = []
+        for r in rows:
+            try:
+                # Parse the JSON string array from the database column
+                teachers_list = json.loads(r["teacher_names"])
+                
+                # Loop through each teacher name entry within that church record
+                for idx, t_name in enumerate(teachers_list, start=1):
+                    if t_name.strip():
+                        # Create a systematic ID similar to print-pdf logic (e.g., WHA-T01)
+                        t_id = f"{r['alphabet_key']}-T{idx:02d}"
+                        
+                        output.append({
+                            "id": t_id,
+                            "name": t_name.strip().upper(),
+                            "church": str(r["church_name"]).strip().upper(),
+                            "place": str(r["place"]).strip().upper() if r["place"] else ""
+                        })
+            except Exception:
+                pass # Safeguard against corrupt or empty rows
+
+        return jsonify(output)
+
+    # --- STANDARD HANDLING FOR STUDENTS (LKG to XII) ---
+    mapping = {
+        "LKG": ("lkg_id", "lkg_name"), "UKG": ("ukg_id", "ukg_name"),
+        "I": ("std1_id", "std1_name"), "II": ("std2_id", "std2_name"),
+        "III": ("std3_id", "std3_name"), "IV": ("std4_id", "std4_name"),
+        "V": ("std5_id", "std5_name"), "VI": ("std6_id", "std6_name"),
+        "VII": ("std7_id", "std7_name"), "VIII": ("std8_id", "std8_name"),
+        "IX": ("std9_id", "std9_name"), "X": ("std10_id", "std10_name"),
+        "XI": ("std11_id", "std11_name"), "XII": ("std12_id", "std12_name")
+    }
+
+    if standard not in mapping:
+        conn.close()
+        return jsonify([])
+
+    id_col, name_col = mapping[standard]
+    
+    query = f"""
+        SELECT {id_col} AS sid, {name_col} AS sname, church_name, place 
+        FROM church_schools 
+        WHERE TRIM(council) LIKE ? 
+          AND TRIM(headquarters_branch) LIKE ? 
+          AND {name_col} IS NOT NULL 
+          AND TRIM({name_col}) != ''
+        ORDER BY alphabet_key ASC, church_name ASC
+    """
+    
+    rows = conn.execute(query, (council, type_val)).fetchall()
+    conn.close()
+
+    output = []
+    for r in rows:
+        if r["sid"]:
+            output.append({
+                "id": str(r["sid"]).strip(),
+                "name": str(r["sname"]).strip().upper(),
+                "church": str(r["church_name"]).strip().upper(),
+                "place": str(r["place"]).strip().upper() if r["place"] else ""
+            })
+
+    return jsonify(output)
+
+@app.route("/result-view")
+def result_view_page():
+    """
+    Renders the Grand Championship analytics dashboard showing the Top 3 
+    leaderboards and individual church standard-wise summary matrices.
+    """
+    return render_template("result_view.html")
+
+
+@app.route("/api/scoreboard-statistics", methods=["GET"])
+def api_scoreboard_statistics():
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT council, headquarters_branch, standard, participant_name, church_name, place, prize_position 
+            FROM competition_results
+        """)
+        results = cursor.fetchall()
+        conn.close()
+
+        score_map = {"First": 5, "Second": 3, "Third": 2}
+        standards_list = ["LKG", "UKG", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"]
+        
+        # Extended view standard targets array parameters including TEACHER
+        display_standards = standards_list + ["TEACHER"]
+
+        councils = ["WEST Council", "EAST Council"]
+        types = ["Headquarters", "Branch"]
+        
+        structured_data = {c: {t: {"top_three": [], "church_cards": {}} for t in types} for c in councils}
+
+        for res in results:
+            c = res["council"].strip()
+            t = res["headquarters_branch"].strip()
+            std = res["standard"].strip()
+            prize = res["prize_position"].strip()
+            
+            if c not in structured_data or t not in structured_data[c] or std not in display_standards:
+                continue
+                
+            church_title = f"{res['church_name'].strip()} - {res['place'].strip()}".upper()
+            cards_group = structured_data[c][t]["church_cards"]
+
+            if church_title not in cards_group:
+                cards_group[church_title] = {
+                    "title": church_title,
+                    "total_score": 0,
+                    # Initialize each standard as an empty list to support multiple clean individual rows
+                    "items": {s: [] for s in display_standards}
+                }
+
+            # Safeguard point allotment logic: 0 points if standard is TEACHER
+            points = 0 if std == "TEACHER" else score_map.get(prize, 0)
+            name_val = res["participant_name"].strip().upper()
+
+            # Append as a distinct separate object block instead of string concatenating with '&'
+            cards_group[church_title]["items"][std].append({
+                "name": name_val,
+                "prize": prize,
+                "score": points
+            })
+
+            cards_group[church_title]["total_score"] += points
+
+        for c in councils:
+            for t in types:
+                cards_dict = structured_data[c][t]["church_cards"]
+                
+                # Fallback safeguard: If a standard has no winners, provide a default blank row dictionary structure
+                for church_title, card in cards_dict.items():
+                    for std in display_standards:
+                        if not card["items"][std]:
+                            card["items"][std] = [{"name": "-", "prize": "-", "score": 0}]
+
+                cards_list = list(cards_dict.values())
+                
+                cards_list.sort(key=lambda x: (-x["total_score"], x["title"]))
+                structured_data[c][t]["church_cards"] = cards_list
+
+                unique_scores = sorted(list(set(ch["total_score"] for ch in cards_list if ch["total_score"] > 0)), reverse=True)
+                
+                top_three_list = []
+                rank_labels = ["1st Place Champion", "2nd Place Runner", "3rd Place Finalist"]
+
+                for i, score in enumerate(unique_scores[:3]):
+                    matching_churches = [ch["title"] for ch in cards_list if ch["total_score"] == score]
+                    top_three_list.append({
+                        "position": rank_labels[i],
+                        "church_title": " / ".join(matching_churches),
+                        "score": score
+                    })
+
+                structured_data[c][t]["top_three"] = top_three_list
+
+        return jsonify({"status": "success", "data": structured_data})
+
+    except Exception as e:
+        print(f"FATAL ERROR: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)})
+
+@app.route("/save-results-batch", methods=["POST"])
+def save_results_batch():
+    try:
+        data = request.get_json() or {}
+        
+        council = data.get("council")
+        hq_b = data.get("headquarters_branch") or data.get("type")
+        
+        first_arr = data.get("first", [])
+        second_arr = data.get("second", [])
+        third_arr = data.get("first_third") or data.get("third") or []
+
+        if not council or not hq_b:
+            return jsonify({"status": "error", "message": "Missing Council or Branch type parameters."})
+
+        conn = get_connection()
+        
+        impacted_standards = set()
+        for x in (first_arr + second_arr + third_arr):
+            if x and "standard" in x:
+                impacted_standards.add(x["standard"])
+
+        for std_val in impacted_standards:
+            conn.execute("""
+                DELETE FROM competition_results 
+                WHERE council = ? AND headquarters_branch = ? AND standard = ?
+            """, (council, hq_b, std_val))
+
+        def commit_rank_group(items_list, rank_name):
+            for item in items_list:
+                if not item:
+                    continue
+                p_id = item.get("id") or item.get("participant_id")
+                p_name = item.get("name") or item.get("participant_name") or "Unknown"
+                p_church = item.get("church") or item.get("church_name") or ""
+                p_place = item.get("place") or ""
+                p_std = item.get("standard")
+
+                if p_std and p_id:
+                    conn.execute("""
+                        INSERT INTO competition_results (
+                            council, headquarters_branch, standard, 
+                            participant_id, participant_name, church_name, place, prize_position
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (council, hq_b, p_std, p_id, p_name, p_church, p_place, rank_name))
+
+        commit_rank_group(first_arr, "First")
+        commit_rank_group(second_arr, "Second")
+        commit_rank_group(third_arr, "Third")
+
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "success"})
+        
+    except Exception as e:
+        print(f"CRITICAL SAVE ERROR: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)})
+
+
+@app.route("/save-matrix-ledger", methods=["POST"])
+def save_matrix_ledger():
+    try:
+        data = request.get_json() or {}
+        
+        council = data.get("council")
+        hq_b = data.get("headquarters_branch")
+        placements = data.get("placements", [])
+
+        if not council or not hq_b:
+            return jsonify({"status": "error", "message": "Missing Council group or Classification type attributes."})
+
+        conn = get_connection()
+        
+        impacted_standards = set(item.get("standard") for item in placements if item.get("standard"))
+
+        for std_val in impacted_standards:
+            conn.execute("""
+                DELETE FROM competition_results 
+                WHERE council = ? AND headquarters_branch = ? AND standard = ?
+            """, (council, hq_b, std_val))
+
+        for item in placements:
+            p_std = item.get("standard")
+            p_id = item.get("id")
+            p_name = item.get("name") or "Unknown"
+            p_church = item.get("church") or ""
+            p_place = item.get("place") or ""
+            rank_name = item.get("rank")  
+
+            if p_std and p_id and rank_name:
+                conn.execute("""
+                    INSERT INTO competition_results (
+                        council, headquarters_branch, standard, 
+                        participant_id, participant_name, church_name, place, prize_position
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (council, hq_b, p_std, p_id, p_name, p_church, p_place, rank_name))
+
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "success"})
+        
+    except Exception as e:
+        print(f"CRITICAL SAVE ERROR: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)})
+
+@app.route('/certificate-view')
+def certificate_view():
+    """
+    Renders the Championship Certificate Automation Engine page.
+    This page dynamically pulls data from the /api/scoreboard-statistics endpoint.
+    """
+    return render_template('certificate-view.html')
 if __name__ == "__main__":
     repair_database_entries()
-    app.run(host="0.0.0.0", port=10000)
+    app.run(debug=True)

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Championship Certificate Automation Engine</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    
+    <style>
+        body { background: #f4f6f9; font-family: system-ui, -apple-system, sans-serif; }
+        .control-panel-card { background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        
+        /* PROCESSING LOADER OVERLAY */
+        #zipLoader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; color: white; justify-content: center; align-items: center; flex-direction: column; text-align: center; }
+
+        /* ------------------------------------------------------------------------- */
+        /* EXACT OVERLAY CANVAS ARCHITECTURE                                         */
+        /* ------------------------------------------------------------------------- */
+        .certificate-render-frame {
+            width: 1120px;
+            height: 790px;
+            min-width: 1120px;
+            min-height: 790px;
+            max-width: 1120px;
+            max-height: 790px;
+            position: relative;
+            margin: 20px auto;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            overflow: hidden;
+            box-sizing: border-box;
+            background-color: #fff;
+        }
+
+        /* HARD-CODED ABSOLUTE BACKGROUND IMAGE STRATA TO PREVENT BLANK PAGES */
+        .cert-bg-img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 1120px;
+            height: 790px;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* ABSOLUTE PLACEMENT FOR TEXT FIELDS (Sits above background image) */
+        .cert-field {
+            position: absolute;
+            font-family: 'Georgia', 'Times New Roman', serif;
+            font-size: 22px;
+            font-weight: bold;
+            color: #0d2c54; 
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            text-align: left;
+            z-index: 2;
+        }
+
+        /* ------------------------------------------------------------------------- */
+        /* SPECIFIC TARGETED COORDINATE ALIGNMENTS WITH THE NEW 5PX HEIGHT LIFT      */
+        /* ------------------------------------------------------------------------- */
+        .field-awarded-to {
+            top: 429px;       /* Lifted 5px higher from 436px */
+            left: 255px;       
+            width: 705px;
+        }
+
+        .field-church {
+            top: 498px;       /* UNTOUCHED - PERFECT POSITION REMAINS EXACTLY AS IT WAS */
+            left: 245px;
+            width: 715px;
+        }
+
+        .field-class {
+            top: 569px;       /* Lifted 5px higher from 588px */
+            left: 249px;
+            width: 180px;
+        }
+
+        .field-rank {
+            top: 576px;       /* Lifted 5px higher from 588px */
+            left: 520px;       
+            width: 125px;
+            font-size: 16px;   
+        }
+
+        .field-date {
+            top: 569px;       /* Lifted 5px higher from 588px */
+            left: 710px;       
+            width: 250px;
+        }
+
+        .cert-preview-container { background: #e9ecef; border-radius: 8px; padding: 15px; border: 1px dashed #ced4da; }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { background: #fff !important; padding: 0 !important; margin: 0 !important; }
+            .certificate-render-frame { margin: 0 !important; box-shadow: none !important; page-break-inside: avoid; page-break-after: always; }
+            @page { size: A4 landscape; margin: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="zipLoader">
+    <div class="spinner-border text-warning mb-3" style="width: 3.5rem; height: 3.5rem;" role="status"></div>
+    <h4 class="fw-bold" id="zipLoaderTitle">Compiling Certificates...</h4>
+    <p id="zipProgressText" class="text-light text-opacity-75">Reading dataset records matrix...</p>
+</div>
+
+<div class="container mt-4 mb-5 no-print">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="/result-view" class="btn btn-outline-dark me-2">← Back to Scoreboard Dashboard</a>
+            <a href="/" class="btn btn-outline-secondary">Home</a>
+        </div>
+        <h3 class="fw-bold m-0 text-dark">📜 Scripture Exam Certificate Overlay Automation</h3>
+    </div>
+
+    <div class="card control-panel-card p-4 mb-5">
+        <h5 class="fw-bold text-secondary border-bottom pb-2 mb-3">📦 Download Options Segregated by Council & Type</h5>
+        <p class="text-muted small">Generate and download individual certificate PDFs grouped into bulk ZIP file structures:</p>
+        
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="p-3 border rounded bg-light">
+                    <h6 class="fw-bold text-dark mb-2">📍 WEST COUNCIL JURISDICTION</h6>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary btn-sm w-100 fw-bold shadow-sm" onclick="compileGroupZipArchive('WEST Council', 'Headquarters')">📦 Headquarters ZIP</button>
+                        <button class="btn btn-outline-primary btn-sm w-100 fw-bold shadow-sm" onclick="compileGroupZipArchive('WEST Council', 'Branch')">📦 Branch ZIP</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-3 border rounded bg-light">
+                    <h6 class="fw-bold text-dark mb-2">📍 EAST COUNCIL JURISDICTION</h6>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-success btn-sm w-100 fw-bold shadow-sm" onclick="compileGroupZipArchive('EAST Council', 'Headquarters')">📦 Headquarters ZIP</button>
+                        <button class="btn btn-outline-success btn-sm w-100 fw-bold shadow-sm" onclick="compileGroupZipArchive('EAST Council', 'Branch')">📦 Branch ZIP</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h4 class="fw-bold text-dark mb-3">👁️ Dynamic Live Layout Preview Stream</h4>
+</div>
+
+<div id="masterCertificatesStream">
+    <div class="container text-center py-5 no-print">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="text-muted mt-2 fw-semibold">Connecting to statistics log dataset and assembling components...</p>
+    </div>
+</div>
+
+<script>
+let partitionedCertificatesRegistry = {
+    "WEST Council": { "Headquarters": [], "Branch": [] },
+    "EAST Council": { "Headquarters": [], "Branch": [] }
+};
+
+const pdfExportOptions = {
+    margin:       0,
+    filename:     'certificate.pdf',
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { 
+        scale: 2, 
+        useCORS: true, 
+        allowTaint: true,
+        logging: false, 
+        width: 1120, 
+        height: 790, 
+        scrollX: 0, 
+        scrollY: 0 
+    }, 
+    jsPDF:        { unit: 'pt', format: 'a4', orientation: 'landscape' }
+};
+
+document.addEventListener("DOMContentLoaded", function() {
+    fetch("/api/scoreboard-statistics")
+    .then(r => r.json())
+    .then(response => {
+        if (response.status !== "success") {
+            document.getElementById("masterCertificatesStream").innerHTML = `
+                <div class="container alert alert-danger my-4">Parsing Process Failure: ${response.message}</div>
+            `;
+            return;
+        }
+
+        const statisticsData = response.data;
+        let htmlBufferStream = "";
+        
+        const councils = ["WEST Council", "EAST Council"];
+        const types = ["Headquarters", "Branch"];
+        const standards = ["LKG", "UKG", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "TEACHER"];
+
+        let uniqueTokenCounter = 0;
+
+        councils.forEach(council => {
+            types.forEach(type => {
+                const segment = statisticsData[council]?.[type];
+                if (!segment || !segment.church_cards) return;
+
+                segment.church_cards.forEach(churchCard => {
+                    const rawChurchTitle = churchCard.title.trim().toUpperCase();
+
+                    standards.forEach(std => {
+                        const rawItem = churchCard.items?.[std];
+                        if (!rawItem) return;
+
+                        let itemsArray = Array.isArray(rawItem) ? rawItem : [rawItem];
+
+                        itemsArray.forEach(winnerRecord => {
+                            if (!winnerRecord.name || winnerRecord.name.trim() === "" || winnerRecord.prize === "-") return;
+
+                            uniqueTokenCounter++;
+                            
+                            let recipientName = winnerRecord.name.trim().toUpperCase();
+                            let prizeLabel = winnerRecord.prize.trim().toUpperCase();
+                            
+                            if (!prizeLabel.includes("PRIZE")) {
+                                prizeLabel = prizeLabel + " PRIZE";
+                            }
+
+                            let classFieldString = (std === "TEACHER") ? "CLASS TEACHER" : std;
+
+                            const safeWinnerFilename = recipientName.replace(/[^A-Z0-9]/g, '');
+                            const safeStandardFilename = std.replace(/[^A-Z0-9]/g, '');
+                            const safeCouncilFilename = council.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                            const safeTypeFilename = type.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                            
+                            const trackingOutputDocName = `${safeWinnerFilename}_${safeStandardFilename}_${safeCouncilFilename}_${safeTypeFilename}`;
+                            const canvasDomTargetId = `cert_canvas_uid_node_${uniqueTokenCounter}`;
+
+                            partitionedCertificatesRegistry[council][type].push({
+                                elementId: canvasDomTargetId,
+                                filename: trackingOutputDocName
+                            });
+
+                            htmlBufferStream += `
+                                <div class="container my-5 cert-preview-container bg-white shadow-sm" id="wrapper_${canvasDomTargetId}">
+                                    <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded no-print">
+                                        <div>
+                                            <span class="badge bg-dark">${council.toUpperCase()}</span>
+                                            <span class="badge bg-secondary ms-1">${type.toUpperCase()}</span>
+                                            <span class="ms-2 font-monospace text-dark fw-bold">${recipientName} (${std})</span>
+                                        </div>
+                                        <button class="btn btn-sm btn-outline-danger fw-bold px-4 shadow-sm" onclick="downloadSingleCertificateAsPDF('${canvasDomTargetId}', '${trackingOutputDocName}')">
+                                            📥 Download Single PDF
+                                        </button>
+                                    </div>
+
+                                    <div class="certificate-render-frame" id="${canvasDomTargetId}">
+                                        <img src="/static/FINAL.png" class="cert-bg-img" alt="Background Template">
+                                        <div class="cert-field field-awarded-to">${recipientName}</div>
+                                        <div class="cert-field field-church">${rawChurchTitle}</div>
+                                        <div class="cert-field field-class">${classFieldString}</div>
+                                        <div class="cert-field field-rank">${prizeLabel}</div>
+                                        <div class="cert-field field-date">14.06.2026</div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    });
+                });
+            });
+        });
+
+        if (uniqueTokenCounter === 0) {
+            document.getElementById("masterCertificatesStream").innerHTML = `
+                <div class="container alert alert-info text-center my-4">Verification Check: No active prize winner database records found.</div>
+            `;
+        } else {
+            document.getElementById("masterCertificatesStream").innerHTML = htmlBufferStream;
+        }
+    })
+    .catch(err => {
+        document.getElementById("masterCertificatesStream").innerHTML = `
+            <div class="container alert alert-danger my-4">Runtime Pipeline Failure: ${err}</div>
+        `;
+    });
+});
+
+function downloadSingleCertificateAsPDF(targetDomId, completeFilenameString) {
+    const componentNodeElement = document.getElementById(targetDomId);
+    if (!componentNodeElement) return;
+
+    window.scrollTo(0, 0); 
+    
+    const isolatedExecutionOptions = { 
+        ...pdfExportOptions, 
+        filename: `${completeFilenameString}.pdf` 
+    };
+
+    html2pdf().set(isolatedExecutionOptions).from(componentNodeElement).save();
+}
+
+async function compileGroupZipArchive(targetCouncilFilter, targetTypeFilter) {
+    const processingGroupMatrixArray = partitionedCertificatesRegistry[targetCouncilFilter]?.[targetTypeFilter];
+    
+    if (!processingGroupMatrixArray || processingGroupMatrixArray.length === 0) {
+        alert("Action Cancelled: No data found.");
+        return;
+    }
+
+    window.scrollTo(0, 0);
+
+    const loaderOverlayMask = document.getElementById("zipLoader");
+    const labelProgressBarText = document.getElementById("zipProgressText");
+    const loaderHeaderTitleText = document.getElementById("zipLoaderTitle");
+
+    loaderHeaderTitleText.innerText = `Packaging ${targetCouncilFilter.toUpperCase()} (${targetTypeFilter.toUpperCase()})`;
+    loaderOverlayMask.style.display = "flex";
+
+    const localZipEngineInstance = new JSZip();
+
+    for (let counterIdx = 0; counterIdx < processingGroupMatrixArray.length; counterIdx++) {
+        const targetingItemRecord = processingGroupMatrixArray[counterIdx];
+        
+        labelProgressBarText.innerText = `Rendering frame ${counterIdx + 1} of ${processingGroupMatrixArray.length}:\n${targetingItemRecord.filename.replace(/_/g, ' ')}`;
+        
+        const domTargetElementReference = document.getElementById(targetingItemRecord.elementId);
+        if (domTargetElementReference) {
+            await new Promise(resolve => setTimeout(resolve, 250));
+            const outputBinaryBlobData = await html2pdf().set(pdfExportOptions).from(domTargetElementReference).output('blob');
+            localZipEngineInstance.file(`${targetingItemRecord.filename}.pdf`, outputBinaryBlobData);
+        }
+    }
+
+    labelProgressBarText.innerText = "Compiling targeted ZIP package...";
+    
+    const configuredZipArchiveFilename = `${targetCouncilFilter.toUpperCase().replace(/\s+/g, '-')}-${targetTypeFilter.toUpperCase()}-CERTIFICATES-2026.zip`;
+
+    localZipEngineInstance.generateAsync({ type: "blob" }).then(function(binaryZipContentBlobStream) {
+        const dummyClickTriggerAnchor = document.createElement('a');
+        dummyClickTriggerAnchor.href = window.URL.createObjectURL(binaryZipContentBlobStream);
+        dummyClickTriggerAnchor.download = configuredZipArchiveFilename;
+        dummyClickTriggerAnchor.click();
+        
+        loaderOverlayMask.style.display = "none";
+    });
+}
+</script>
+
+</body>
+</html>

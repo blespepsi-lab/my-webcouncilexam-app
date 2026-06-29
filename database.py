@@ -1,6 +1,5 @@
 import sqlite3
 
-# Define target data storage file link
 DATABASE_NAME = "church_v3.db"
 
 conn = sqlite3.connect(DATABASE_NAME)
@@ -23,22 +22,16 @@ CREATE TABLE IF NOT EXISTS church_schools (
     payment_status TEXT DEFAULT 'No',
     lkg_id TEXT, lkg_name TEXT,
     ukg_id TEXT, ukg_name TEXT,
-    std1_id TEXT, std1_name TEXT,
-    std2_id TEXT, std2_name TEXT,
-    std3_id TEXT, std3_name TEXT,
-    std4_id TEXT, std4_name TEXT,
-    std5_id TEXT, std5_name TEXT,
-    std6_id TEXT, std6_name TEXT,
-    std7_id TEXT, std7_name TEXT,
-    std8_id TEXT, std8_name TEXT,
-    std9_id TEXT, std9_name TEXT,
-    std10_id TEXT, std10_name TEXT,
-    std11_id TEXT, std11_name TEXT,
-    std12_id TEXT, std12_name TEXT
+    std1_id TEXT, std1_name TEXT, std2_id TEXT, std2_name TEXT,
+    std3_id TEXT, std3_name TEXT, std4_id TEXT, std4_name TEXT,
+    std5_id TEXT, std5_name TEXT, std6_id TEXT, std6_name TEXT,
+    std7_id TEXT, std7_name TEXT, std8_id TEXT, std8_name TEXT,
+    std9_id TEXT, std9_name TEXT, std10_id TEXT, std10_name TEXT,
+    std11_id TEXT, std11_name TEXT, std12_id TEXT, std12_name TEXT
 )
 """)
 
-# 2. Performance Tracking Matrix Results Table
+# 2. Performance Tracking Matrix Results Table (STUDENTS ONLY)
 cur.execute("""
 CREATE TABLE IF NOT EXISTS competition_results (
     result_id INTEGER PRIMARY KEY AUTOINCREMENT,

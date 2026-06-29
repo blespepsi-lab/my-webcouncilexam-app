@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Competition Result Entry</title>
+    <title>Competition Result Matrix Entry</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -9,28 +9,132 @@
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
 
     <style>
-        body { background: #f4f6f9; }
+        body { background: #f4f6f9; font-size: 14px; color: #000; }
         .dashboard-card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .winner-box { min-height: 200px; border: 2px dashed #dee2e6; border-radius: 8px; background: #fafafa; padding: 10px; }
-        .remove-btn { font-size: 0.75rem; padding: 2px 8px; }
+        .master-matrix-table th { background-color: #212529 !important; color: white !important; font-weight: 600; text-align: center; }
+        .master-matrix-table td { vertical-align: middle; }
+        
+        .prize-tag { 
+            display: inline-flex; 
+            align-items: center; 
+            background: #f8f9fa; 
+            border: 1px solid #ced4da; 
+            border-radius: 4px; 
+            padding: 3px 8px; 
+            margin: 2px; 
+            font-size: 0.85rem; 
+            font-weight: 500;
+        }
+        .prize-tag .remove-tag-btn {
+            background: none;
+            border: none;
+            color: #dc3545;
+            font-weight: bold;
+            margin-left: 6px;
+            padding: 0;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .prize-tag .remove-tag-btn:hover { color: #bd2130; }
+        .bg-first { border-left: 4px solid #198754; }
+        .bg-second { border-left: 4px solid #0d6efd; }
+        .bg-third { border-left: 4px solid #ffc107; }
+        .bg-teacher { background-color: #fdfcfe; }
+
+        /* Hidden branding header exclusively for physical page print/PDF layouts */
+        .print-only-header {
+            display: none;
+            text-align: center;
+            margin-bottom: 25px;
+            border-bottom: 3px double #000;
+            padding-bottom: 12px;
+        }
+
+        /* HARD RIGID PRINT & DOWNLOAD PDF SPECIFIC ENGINE OVERRIDES */
+        @media print {
+            .no-print, .btn, .card, .alert, label, .select2-container, .remove-tag-btn { 
+                display: none !important; 
+            }
+            body { 
+                background: #fff !important; 
+                padding: 0 !important; 
+                margin: 0 !important;
+                font-size: 11pt !important;
+            }
+            .container { 
+                max-width: 100% !important; 
+                width: 100% !important; 
+                margin: 0 !important; 
+                padding: 0 !important;
+            }
+            .dashboard-card { 
+                box-shadow: none !important; 
+                padding: 0 !important; 
+                border: none !important;
+            }
+            .print-only-header { 
+                display: block !important; 
+                text-align: center !important;
+            }
+            .master-matrix-table {
+                width: 100% !important;
+                table-layout: fixed !important;
+                border-collapse: collapse !important;
+            }
+            .master-matrix-table th { 
+                background-color: #f2f2f2 !important; 
+                color: #000 !important; 
+                border: 1.5px solid #000 !important;
+                font-size: 11pt !important;
+            }
+            .master-matrix-table td { 
+                border: 1.5px solid #000 !important; 
+                font-size: 10pt !important;
+                background-color: transparent !important;
+            }
+            .prize-tag {
+                border: none !important;
+                background: transparent !important;
+                display: block !important;
+                padding: 2px 0 !important;
+                margin: 0 !important;
+            }
+            @page { 
+                size: A4 portrait; 
+                margin: 15mm 12mm; 
+            }
+        }
     </style>
 </head>
 <body>
 
 <div class="container mt-4 mb-5">
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
         <a href="/" class="btn btn-outline-secondary">← Back to Home</a>
-        <a href="/result-view" class="btn btn-info text-white">📈 View Live Dashboard</a>
+        <div>
+            <button class="btn btn-dark fw-bold shadow-sm me-2" onclick="triggerPDFDownload()">
+                📥 Download Table PDF / Print
+            </button>
+            <a href="/result-view" class="btn btn-info text-white">View Live Dashboard</a>
+        </div>
+    </div>
+
+    <div class="print-only-header">
+        <h2 style="font-weight: bold; margin-bottom: 5px; font-size: 20pt; letter-spacing: -0.5px;">⛪ Satchiyapuram Council Scripture Exam 2026</h2>
+        <h4 id="printDynamicSubtitle" style="color: #495057; font-weight: 600; text-transform: uppercase; margin-top: 2px; font-size: 13pt;"></h4>
     </div>
 
     <div class="dashboard-card">
-        <h2 class="fw-bold text-dark mb-4 border-bottom pb-2">🎯 Scoreboard Placement Entry</h2>
+        <div class="no-print">
+            <h2 class="fw-bold text-dark mb-2 border-bottom pb-2">Scoreboard Placement Entry</h2>
+            <p class="text-muted small mb-4">Select the Council and Classification. Choose a Class Standard, pick a participant, and allocate prizes down the standard rows sequentially.</p>
+        </div>
 
-        <div class="row g-3 mb-4">
+        <div class="row g-3 mb-4 no-print">
             <div class="col-md-4">
                 <label class="form-label fw-semibold text-secondary">Council Group</label>
-                <select id="council" class="form-select border-primary-subtle">
+                <select id="council" class="form-select border-primary-subtle" onchange="resetMatrixAndReload()">
                     <option value="WEST Council">WEST Council</option>
                     <option value="EAST Council">EAST Council</option>
                 </select>
@@ -38,15 +142,15 @@
 
             <div class="col-md-4">
                 <label class="form-label fw-semibold text-secondary">Classification Type</label>
-                <select id="type" class="form-select border-primary-subtle">
+                <select id="type" class="form-select border-primary-subtle" onchange="resetMatrixAndReload()">
                     <option value="Headquarters">Headquarters</option>
                     <option value="Branch">Branch</option>
                 </select>
             </div>
 
             <div class="col-md-4">
-                <label class="form-label fw-semibold text-secondary">Class Standard / Grade</label>
-                <select id="standard" class="form-select border-primary-subtle">
+                <label class="form-label fw-semibold text-secondary">Target Class Standard Grade</label>
+                <select id="standard" class="form-select border-primary-subtle" onchange="handleStandardChange()">
                     <option value="LKG">LKG</option><option value="UKG">UKG</option>
                     <option value="I">I</option><option value="II">II</option>
                     <option value="III">III</option><option value="IV">IV</option>
@@ -54,50 +158,62 @@
                     <option value="VII">VII</option><option value="VIII">VIII</option>
                     <option value="IX">IX</option><option value="X">X</option>
                     <option value="XI">XI</option><option value="XII">XII</option>
+                    <option value="TEACHER">🧑‍🏫 TEACHER EXAM</option>
                 </select>
             </div>
         </div>
 
-        <div class="card bg-light border-0 mb-4">
-            <div class="card-body">
-                <label class="form-label fw-bold text-dark">Select Roster Participant</label>
-                <select id="participant" class="form-control" style="width: 100%;"></select>
+        <div class="card bg-light border-0 mb-5 shadow-sm no-print">
+            <div class="card-body p-4">
+                <label class="form-label fw-bold text-dark mb-2" id="participantSelectLabel">Select Participant Nominee</label>
                 
-                <div id="participantInfo" class="alert alert-secondary mt-3 mb-0 py-2 font-monospace small">
+                <div id="studentSelectWrapper">
+                    <select id="participant" class="form-control" style="width: 100%;"></select>
+                </div>
+                
+                <div id="participantInfo" class="alert alert-secondary mt-3 mb-3 py-2 font-monospace small">
                     💡 Choose a valid verified participant registry row configuration...
                 </div>
-            </div>
-        </div>
 
-        <div class="row g-3 mt-2">
-            <div class="col-md-4">
-                <div class="p-3 border rounded bg-white h-100 shadow-sm">
-                    <h5 class="fw-bold text-success border-bottom pb-2 mb-3">🥇 First Place Medal</h5>
-                    <button class="btn btn-sm btn-success w-100 mb-2" onclick="addWinner('first')">+ Allocate FIRST PRIZE</button>
-                    <ul id="firstList" class="list-group winner-box"></ul>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="p-3 border rounded bg-white h-100 shadow-sm">
-                    <h5 class="fw-bold text-primary border-bottom pb-2 mb-3">🥈 Second Place Medal</h5>
-                    <button class="btn btn-sm btn-primary w-100 mb-2" onclick="addWinner('second')">+ Allocate SECOND PRIZE</button>
-                    <ul id="secondList" class="list-group winner-box"></ul>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="p-3 border rounded bg-white h-100 shadow-sm">
-                    <h5 class="fw-bold text-warning border-bottom pb-2 mb-3">🥉 Third Place Medal</h5>
-                    <button class="btn btn-sm btn-warning w-100 mb-2" onclick="addWinner('third')">+ Allocate THIRD PRIZE</button>
-                    <ul id="thirdList" class="list-group winner-box"></ul>
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <button class="btn btn-success w-100 fw-bold py-2 shadow-sm" onclick="allocatePrizeToMatrix('First')">
+                            🥇 Allocate FIRST PRIZE
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-primary w-100 fw-bold py-2 shadow-sm" onclick="allocatePrizeToMatrix('Second')">
+                            🥈 Allocate SECOND PRIZE
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-warning text-dark w-100 fw-bold py-2 shadow-sm" onclick="allocatePrizeToMatrix('Third')">
+                            🥉 Allocate THIRD PRIZE
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="text-end border-top mt-5 pt-3">
-            <button class="btn btn-danger btn-lg px-5 fw-bold shadow" onclick="saveResults()">
-                🚀 Save Grand Championship Placements
+        <h4 class="fw-bold text-secondary mb-3 no-print">📋 Standard-Wise Competition </h4>
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle master-matrix-table bg-white shadow-sm">
+                <thead>
+                    <tr>
+                        <th style="width: 140px;">STANDARD</th>
+                        <th>🥇 FIRST PRIZE WINNERS</th>
+                        <th>🥈 SECOND PRIZE WINNERS</th>
+                        <th>🥉 THIRD PRIZE WINNERS</th>
+                    </tr>
+                </thead>
+                <tbody id="matrixTableBody">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="text-end border-top mt-5 pt-4 no-print">
+            <button class="btn btn-danger btn-lg px-5 fw-bold shadow" onclick="saveMatrixToDatabase()">
+                🚀 Save Grand Championship Placements Into Database
             </button>
         </div>
 
@@ -108,45 +224,117 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
-let selectedIds = [];
-let firstPrize = [];
-let secondPrize = [];
-let thirdPrize = [];
-let participantsMap = {};
+const standardsList = ["LKG", "UKG", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "TEACHER"];
+let matrixState = {};
+let currentLoadedParticipants = {};
 
-// Clean programmatic reset layer to eliminate variable mutation leaks across category loads
-function clearPlacementState() {
-    selectedIds = [];
-    firstPrize = [];
-    secondPrize = [];
-    thirdPrize = [];
-    participantsMap = {};
+function initBlankMatrix() {
+    matrixState = {};
+    standardsList.forEach(std => {
+        matrixState[std] = { "First": [], "Second": [], "Third": [] };
+    });
+}
+
+function renderMatrixTableStructure() {
+    const tbody = document.getElementById("matrixTableBody");
+    tbody.innerHTML = "";
+
+    standardsList.forEach(std => {
+        const data = matrixState[std];
+        
+        const generateTagsHTML = (winnersArray, rank) => {
+            if (winnersArray.length === 0) return `<span class="text-muted text-center d-block small py-1">-- No Winner --</span>`;
+            return winnersArray.map(w => {
+                let badgeLabel = `<strong>[${w.id}]</strong> `;
+                let locationDetails = w.place ? `${w.church}, ${w.place}` : `${w.church}`;
+                return `
+                    <div class="prize-tag text-dark">
+                        ${badgeLabel}${w.name.toUpperCase()} <span class="text-muted mx-1">(${locationDetails})</span>
+                        <button class="remove-tag-btn" onclick="removeWinnerTag('${std}', '${rank}', '${w.uid}')">✕</button>
+                    </div>
+                `;
+            }).join('');
+        };
+
+        const tr = document.createElement("tr");
+        if (std === "TEACHER") {
+            tr.className = "bg-teacher table-secondary border-dark fw-bold";
+        }
+        tr.innerHTML = `
+            <td class="text-center fw-bold bg-light border-end font-monospace text-secondary fs-5">${std}</td>
+            <td class="bg-first">${generateTagsHTML(data.First, "First")}</td>
+            <td class="bg-second">${generateTagsHTML(data.Second, "Second")}</td>
+            <td class="bg-third">${generateTagsHTML(data.Third, "Third")}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function triggerPDFDownload() {
+    const councilVal = document.getElementById("council").value;
+    const typeVal = document.getElementById("type").value;
     
-    document.getElementById("firstList").innerHTML = "";
-    document.getElementById("secondList").innerHTML = "";
-    document.getElementById("thirdList").innerHTML = "";
-    document.getElementById("participantInfo").className = "alert alert-secondary mt-3 mb-0 py-2 font-monospace small";
-    document.getElementById("participantInfo").innerHTML = "💡 Choose a valid verified participant registry row configuration...";
+    document.getElementById("printDynamicSubtitle").innerText = `${councilVal} — ${typeVal} Prize Winners List`;
+    window.print();
+}
+
+function handleStandardChange() {
+    const standard = document.getElementById("standard").value;
+    const infoBox = document.getElementById("participantInfo");
+    
+    document.getElementById("participantSelectLabel").innerText = "Select Participant Nominee";
+    document.getElementById("studentSelectWrapper").style.display = "block";
+    
+    if (standard === "TEACHER") {
+        infoBox.className = "alert alert-warning mt-3 mb-0 py-2 font-monospace small";
+        infoBox.innerHTML = "🧑‍🏫 <strong>Teacher Mode:</strong> Explicitly tracks rewards. Total scores are calculated and mapped directly to the dashboard scorecard.";
+    } else {
+        infoBox.className = "alert alert-secondary mt-3 mb-0 py-2 font-monospace small";
+        infoBox.innerHTML = "💡 Choose a valid verified participant registry row configuration...";
+    }
+    
+    loadParticipants();
+}
+
+function resetMatrixAndReload() {
+    if (hasActivePlacements()) {
+        if (!confirm("Attention: Changing targets will overwrite current unsaved matrix configuration data. Proceed?")) {
+            return;
+        }
+    }
+    initBlankMatrix();
+    renderMatrixTableStructure();
+    handleStandardChange();
+}
+
+function hasActivePlacements() {
+    return standardsList.some(std => 
+        matrixState[std].First.length > 0 || 
+        matrixState[std].Second.length > 0 || 
+        matrixState[std].Third.length > 0
+    );
 }
 
 function loadParticipants() {
-    clearPlacementState();
-
     const council = document.getElementById("council").value;
     const type = document.getElementById("type").value;
     const standard = document.getElementById("standard").value;
 
+    currentLoadedParticipants = {};
+    let ddl = $("#participant");
+    ddl.select2('destroy').html('');
+    ddl.append(new Option("Connecting data registry streams...", "", true, true));
+
     fetch(`/get-participants?council=${encodeURIComponent(council)}&type=${encodeURIComponent(type)}&standard=${encodeURIComponent(standard)}`)
     .then(r => r.json())
     .then(data => {
-        let ddl = $("#participant");
-        
-        // Teardown the instances cleanly before running modifications
-        ddl.select2('destroy').html(''); 
+        ddl.html('');
 
         if (data.length === 0) {
-            ddl.append(new Option("No registered students found matching these specifications", "", true, true));
+            ddl.append(new Option(`No registered records found for ${standard}`, "", true, true));
             ddl.select2({ disabled: true });
+            document.getElementById("participantInfo").className = "alert alert-warning mt-3 mb-0 py-2 font-monospace small";
+            document.getElementById("participantInfo").innerHTML = `⚠️ No matching data located for Level ${standard}.`;
             return;
         }
 
@@ -154,82 +342,106 @@ function loadParticipants() {
         ddl.append(new Option("-- Choose Nominee Registration Entry --", "", true, true));
 
         data.forEach(item => {
-            participantsMap[item.id] = item;
-            let displayString = `[${item.id}] ${item.name} (${item.church}, ${item.place})`;
-            ddl.append(new Option(displayString, item.id, false, false));
+            currentLoadedParticipants[item.id] = item;
+            let label = `[${item.id}] ${item.name.toUpperCase()} — ${item.church.toUpperCase()} (${item.place.toUpperCase()})`;
+            ddl.append(new Option(label, item.id, false, false));
         });
 
         ddl.trigger('change');
+        document.getElementById("participantInfo").className = "alert alert-secondary mt-3 mb-0 py-2 font-monospace small";
+        document.getElementById("participantInfo").innerHTML = `💡 Ready to append allocations onto row: [${standard}].`;
     });
 }
 
 function showParticipantInfo() {
     let id = document.getElementById("participant").value;
-
-    if (!id || !participantsMap[id]) return;
-
-    let p = participantsMap[id];
     let infoBox = document.getElementById("participantInfo");
-    
+
+    if (!id || !currentLoadedParticipants[id]) {
+        infoBox.className = "alert alert-secondary mt-3 mb-0 py-2 font-monospace small";
+        infoBox.innerHTML = "💡 Choose a valid verified participant registry row configuration...";
+        return;
+    }
+
+    let p = currentLoadedParticipants[id];
     infoBox.className = "alert alert-info mt-3 mb-0 py-2 font-monospace small";
-    infoBox.innerHTML = `🏁 <strong>ID:</strong> ${p.id} | <strong>Nominee:</strong> ${p.name} | <strong>Church:</strong> ${p.church} | <strong>Region:</strong> ${p.place}`;
+    infoBox.innerHTML = `🏁 <strong>ID Code:</strong> ${p.id} | <strong>Nominee Name:</strong> ${p.name} | <strong>Church:</strong> ${p.church} | <strong>Place:</strong> ${p.place}`;
 }
 
-function addWinner(prize) {
+function allocatePrizeToMatrix(rankLabel) {
+    const standard = document.getElementById("standard").value;
+    let uniqueId = Math.random().toString(36).substr(2, 9);
+
     let id = document.getElementById("participant").value;
-
     if (!id) {
-        alert("Action Aborted: Please select a valid student participant row mapping first.");
+        alert("Action Discarded: Please select a specific participant option first.");
         return;
     }
 
-    if (selectedIds.includes(id)) {
-        alert("Duplicate Conflict: This student has already been allocated a placement medal in this event category.");
+    let checkDuplication = matrixState[standard].First.some(x => x.id === id) ||
+                           matrixState[standard].Second.some(x => x.id === id) ||
+                           matrixState[standard].Third.some(x => x.id === id);
+
+    if (checkDuplication) {
+        alert("Cross Allocation Error: This code has already been allocated an award marker in this class row block.");
         return;
     }
 
-    let p = participantsMap[id];
-    selectedIds.push(id);
+    let p = currentLoadedParticipants[id];
+    matrixState[standard][rankLabel].push({
+        uid: uniqueId,
+        id: p.id,
+        name: p.name,
+        church: p.church,
+        place: p.place
+    });
 
-    let arr = prize === "first" ? firstPrize : (prize === "second" ? secondPrize : thirdPrize);
-    arr.push(p);
-
-    let listId = prize === "first" ? "firstList" : (prize === "second" ? "secondList" : "thirdList");
-    let li = document.createElement("li");
-    li.className = "list-group-item d-flex justify-content-between align-items-center small p-2 fw-semibold";
-    li.innerHTML = `
-        <div>${p.name} <span class="text-muted d-block" style="font-size:0.7rem;">ID: ${p.id}</span></div>
-        <button class="btn btn-danger btn-sm remove-btn" onclick="removeWinner('${prize}','${p.id}',this)">✕</button>
-    `;
-
-    document.getElementById(listId).appendChild(li);
+    $("#participant").val("").trigger("change");
+    renderMatrixTableStructure();
 }
 
-function removeWinner(prize, id, btn) {
-    selectedIds = selectedIds.filter(x => x !== id);
-
-    if (prize === "first") firstPrize = firstPrize.filter(x => x.id !== id);
-    if (prize === "second") secondPrize = secondPrize.filter(x => x.id !== id);
-    if (prize === "third") thirdPrize = thirdPrize.filter(x => x.id !== id);
-
-    btn.parentElement.remove();
+function removeWinnerTag(std, rank, uid) {
+    matrixState[std][rank] = matrixState[std][rank].filter(x => x.uid !== uid);
+    renderMatrixTableStructure();
 }
 
-function saveResults() {
+function saveMatrixToDatabase() {
+    if (!hasActivePlacements()) {
+        alert("Transaction Aborted: The layout ledger matrix fields are currently empty. There is nothing to process.");
+        return;
+    }
+
     const council = document.getElementById("council").value;
     const type = document.getElementById("type").value;
-    const standard = document.getElementById("standard").value;
+
+    if (!confirm(`Do you want to finalize saving this entire Standard-Wise Matrix for ${council} (${type}) into the database?`)) {
+        return;
+    }
+
+    let flatPayloadList = [];
+    standardsList.forEach(std => {
+        ["First", "Second", "Third"].forEach(rank => {
+            matrixState[std][rank].forEach(item => {
+                flatPayloadList.push({
+                    standard: std,
+                    id: item.id,
+                    name: item.name,
+                    church: item.church,
+                    place: item.place,
+                    rank: rank,
+                    is_teacher: std === "TEACHER"
+                });
+            });
+        });
+    });
 
     const payload = {
         council: council,
         headquarters_branch: type,
-        standard: standard,
-        first: firstPrize,
-        second: secondPrize,
-        third: thirdPrize
+        placements: flatPayloadList
     };
 
-    fetch("/save-results", {
+    fetch("/save-matrix-ledger", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -237,23 +449,25 @@ function saveResults() {
     .then(r => r.json())
     .then(data => {
         if (data.status === "success") {
-            alert(`Placements successfully committed for ${standard} Standard (${council})!`);
-            window.location.href = "/result-view";
+            alert(`🎉 Success! All allocations committed into the master database. Generating PDF ledger print view now...`);
+            
+            triggerPDFDownload();
+
+            initBlankMatrix();
+            renderMatrixTableStructure();
+            handleStandardChange();
         } else {
-            alert("Error Processing Save Request: " + data.message);
+            alert("Database Transaction Processing Failure: " + data.message);
         }
     });
 }
 
 $(document).ready(function() {
     $('#participant').select2();
-    
-    document.getElementById("council").addEventListener("change", loadParticipants);
-    document.getElementById("type").addEventListener("change", loadParticipants);
-    document.getElementById("standard").addEventListener("change", loadParticipants);
     $('#participant').on('change', showParticipantInfo);
-
-    loadParticipants();
+    initBlankMatrix();
+    renderMatrixTableStructure();
+    handleStandardChange();
 });
 </script>
 
