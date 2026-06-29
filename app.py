@@ -690,6 +690,46 @@ def certificate_view():
     This page dynamically pulls data from the /api/scoreboard-statistics endpoint.
     """
     return render_template('certificate-view.html')
+@app.route("/result-entry1")
+def result_entry1_page(): 
+    return render_template("result-entry1.html")
+@app.route("/get-saved-matrix-results")
+def get_saved_matrix_results():
+    council = request.args.get("council")
+    branch_type = request.args.get("type")
+    
+    # Path to your sqlite database file
+    db_path = "church_v3.db" 
+    
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        # Select target records matching the exact column setup requested
+        cursor.execute("""
+            SELECT standard, prize_position, participant_id, participant_name, church_name, place 
+            FROM competition_results 
+            WHERE council = ? AND headquarters_branch = ?
+        """, (council, branch_type))
+        
+        rows = [dict(row) for row in cursor.fetchall()]
+        return jsonify(rows)
+@app.route("/get-all-competition-results")
+def get_all_competition_results():
+    """
+    Retrieves all entry records from competition_results globally.
+    Used by the front-end reporting engine to compile count-aggregates for 
+    Students, Teachers, and Combined grand summaries.
+    """
+    with sqlite3.connect(DATABASE) as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT council, headquarters_branch, standard, prize_position 
+            FROM competition_results
+        """)
+        rows = [dict(row) for row in cursor.fetchall()]
+        return jsonify(rows)
 if __name__ == "__main__":
     repair_database_entries()
     app.run(debug=True)

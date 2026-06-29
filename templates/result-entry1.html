@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Competition Result Matrix Entry - Analytics Ledger</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
+
+    <style>
+        body { background: #f4f6f9; font-size: 14px; }
+        .dashboard-card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        
+        .master-matrix-table th, .summary-matrix-table th { 
+            background-color: #212529 !important; 
+            color: white !important; 
+            font-weight: 600; 
+            text-align: center; 
+        }
+        .master-matrix-table td, .summary-matrix-table td { vertical-align: middle; }
+        
+        .prize-tag { 
+            display: inline-flex; 
+            align-items: center; 
+            background: #f8f9fa; 
+            border: 1px solid #dee2e6; 
+            border-radius: 4px; 
+            padding: 3px 8px; 
+            margin: 2px; 
+            font-size: 0.85rem; 
+            font-weight: 500;
+        }
+        
+        .bg-first { background-color: #fff3cd !important; border-left: 4px solid #ffc107; }
+        .bg-second { background-color: #e2e3e5 !important; border-left: 4px solid #6c757d; }
+        .bg-third { background-color: #f8d7da !important; border-left: 4px solid #dc3545; }
+        .bg-teacher { background-color: #e0f7fa !important; }
+        .page-break { page-break-before: always; }
+
+        .print-only-header {
+            display: none;
+            text-align: center;
+            margin-bottom: 25px;
+            border-bottom: 3px double #000;
+            padding-bottom: 12px;
+        }
+
+        /* GENERAL PRINT OVERRIDES */
+        @media print {
+            *, h1, h2, h3, h4, h5, h6, th, td, div, span, p, label, strong {
+                color: #000 !important;
+            }
+            .no-print, .btn, .card, .alert, label, .select2-container { 
+                display: none !important; 
+            }
+            body { 
+                background: #fff !important; 
+                padding: 0 !important; 
+                margin: 0 !important;
+            }
+            .container { 
+                max-width: 100% !important; 
+                width: 100% !important; 
+                margin: 0 !important; 
+                padding: 0 !important;
+            }
+            .dashboard-card { 
+                box-shadow: none !important; 
+                padding: 0 !important; 
+                border: none !important;
+            }
+            .print-only-header { 
+                display: block !important; 
+                text-align: center !important;
+            }
+            .master-matrix-table, .summary-matrix-table {
+                width: 100% !important;
+                table-layout: fixed !important;
+                border-collapse: collapse !important;
+                margin-bottom: 15px !important;
+            }
+            .master-matrix-table th, .summary-matrix-table th { 
+                background-color: #f2f2f2 !important; 
+                color: #000 !important; 
+                border: 1px solid #000 !important;
+                padding: 6px !important;
+            }
+            .master-matrix-table td, .summary-matrix-table td { 
+                border: 1px solid #000 !important; 
+                background-color: transparent !important;
+                padding: 6px !important;
+            }
+            .prize-tag {
+                border: 1px solid #ccc !important;
+                background: transparent !important;
+                display: inline-block !important;
+                padding: 2px 4px !important;
+                margin: 2px !important;
+            }
+            
+            /* Class toggled during 'Full Report Summary' (Portrait - hides 3 statistical tables) */
+            body.print-full-report-mode .summary-tables-section,
+            body.print-full-report-mode .page-break {
+                display: none !important;
+            }
+            body.print-full-report-mode {
+                font-size: 11pt !important;
+            }
+            body.print-full-report-mode .master-matrix-table th { font-size: 11pt !important; }
+            body.print-full-report-mode .master-matrix-table td { font-size: 10pt !important; }
+
+            /* Class toggled during 'Consolidated Summary Tables' (Landscape - forces single sheet) */
+            body.print-summary-only-mode .detail-matrix-section,
+            body.print-summary-only-mode .page-break {
+                display: none !important;
+            }
+            body.print-summary-only-mode {
+                font-size: 9pt !important;
+            }
+            body.print-summary-only-mode .print-only-header {
+                margin-bottom: 10px !important;
+                padding-bottom: 5px !important;
+            }
+            body.print-summary-only-mode .summary-tables-section {
+                margin-top: 0 !important;
+            }
+            body.print-summary-only-mode .summary-tables-section h3 {
+                font-size: 14pt !important;
+                margin-bottom: 10px !important;
+                padding-bottom: 3px !important;
+            }
+            body.print-summary-only-mode .summary-tables-section h5 {
+                font-size: 10pt !important;
+                margin-bottom: 4px !important;
+            }
+            body.print-summary-only-mode .summary-matrix-table {
+                margin-bottom: 10px !important;
+            }
+            body.print-summary-only-mode .summary-matrix-table th, 
+            body.print-summary-only-mode .summary-matrix-table td { 
+                font-size: 9pt !important; 
+                padding: 4px !important;
+            }
+            body.print-summary-only-mode .summary-matrix-table .table-dark,
+            body.print-summary-only-mode .summary-matrix-table td.table-dark,
+            body.print-summary-only-mode .summary-matrix-table .font-monospace {
+                background-color: #ffffff !important;
+                color: #000000 !important;
+                font-weight: bold !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container mt-4 mb-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+        <a href="/" class="btn btn-outline-secondary">← Back to Home</a>
+        <div>
+            <button class="btn btn-dark fw-bold shadow-sm me-2" onclick="triggerFullPDFDownload()">
+                📥 Download Full Report Summary PDF
+            </button>
+            <button class="btn btn-success fw-bold shadow-sm me-2" onclick="triggerSummaryOnlyPDFDownload()">
+                📊 Download Consolidated Summary Tables PDF (3 Tables)
+            </button>
+            <a href="/result-view" class="btn btn-info text-white">View Live Dashboard</a>
+        </div>
+    </div>
+
+    <div class="print-only-header">
+        <h2 style="font-weight: bold; margin-bottom: 5px; font-size: 18pt; letter-spacing: -0.5px;">⛪ Satchiyapuram Council Scripture Exam 2026</h2>
+        <h4 id="printDynamicSubtitle" style="font-weight: 600; text-transform: uppercase; margin-top: 2px; font-size: 12pt;"></h4>
+    </div>
+
+    <div class="dashboard-card">
+        <div class="no-print">
+            <h2 class="fw-bold mb-2 border-bottom pb-2 text-secondary">Scoreboard Placement Ledger & Analytics</h2>
+            <p class="text-muted small mb-4">Select parameters below to dynamically extract row listings alongside global statistical cross-tables derived from live database counters.</p>
+        </div>
+
+        <div class="row g-3 mb-4 no-print">
+            <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark">Council Group Focus Area</label>
+                <select id="council" class="form-select border-primary-subtle" onchange="loadSavedDatabaseMatrix()">
+                    <option value="WEST Council">WEST Council</option>
+                    <option value="EAST Council">EAST Council</option>
+                </select>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark">Classification Selection Type</label>
+                <select id="type" class="form-select border-primary-subtle" onchange="loadSavedDatabaseMatrix()">
+                    <option value="Headquarters">Headquarters</option>
+                    <option value="Branch">Branch</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="detail-matrix-section">
+            <h4 class="fw-bold mb-3 text-dark">📋 Standard-Wise Nominee Winners Mapping</h4>
+            <div class="table-responsive mb-5">
+                <table class="table table-bordered align-middle master-matrix-table bg-white shadow-sm">
+                    <thead>
+                        <tr>
+                            <th style="width: 140px;">STANDARD</th>
+                            <th>🥇 FIRST PRIZE WINNERS</th>
+                            <th>🥈 SECOND PRIZE WINNERS</th>
+                            <th>🥉 THIRD PRIZE WINNERS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="matrixTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="page-break"></div>
+
+        <div class="summary-tables-section mt-4">
+            <h3 class="fw-bold text-dark border-bottom pb-2 mb-4">📊 Statistical Matrix Summarization (Global Database Scope)</h3>
+            
+            <h5 class="text-primary fw-bold mb-2">1. Student Placements Count Breakdown (LKG - XII)</h5>
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered summary-matrix-table bg-white text-center shadow-sm">
+                    <thead>
+                        <tr>
+                            <th>COUNCIL GROUP</th>
+                            <th>CLASSIFICATION TYPE</th>
+                            <th>🥇 FIRST PRIZE COUNT</th>
+                            <th>🥈 SECOND PRIZE COUNT</th>
+                            <th>🥉 THIRD PRIZE COUNT</th>
+                            <th class="table-dark fw-bold text-black">ROW TOTALS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentSummaryBody">
+                    </tbody>
+                    <tfoot id="studentSummaryFoot" class="table-light fw-bold border-dark text-center">
+                    </tfoot>
+                </table>
+            </div>
+
+            <h5 class="text-success fw-bold mb-2">2. Teacher Placements Count Breakdown</h5>
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered summary-matrix-table bg-white text-center shadow-sm">
+                    <thead>
+                        <tr>
+                            <th>COUNCIL GROUP</th>
+                            <th>CLASSIFICATION TYPE</th>
+                            <th>🥇 FIRST PRIZE COUNT</th>
+                            <th>🥈 SECOND PRIZE COUNT</th>
+                            <th>🥉 THIRD PRIZE COUNT</th>
+                            <th class="table-dark fw-bold text-black">ROW TOTALS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="teacherSummaryBody">
+                    </tbody>
+                    <tfoot id="teacherSummaryFoot" class="table-light fw-bold border-dark text-center">
+                    </tfoot>
+                </table>
+            </div>
+
+            <h5 class="text-danger fw-bold mb-2">3. Grand Consolidated Combined Summary (Students + Teachers)</h5>
+            <div class="table-responsive">
+                <table class="table table-bordered summary-matrix-table bg-white text-center shadow-sm">
+                    <thead>
+                        <tr>
+                            <th>COUNCIL GROUP</th>
+                            <th>CLASSIFICATION TYPE</th>
+                            <th class="bg-warning text-dark fw-bold">🥇 TOTAL FIRSTS</th>
+                            <th class="bg-secondary text-white fw-bold">🥈 TOTAL SECONDS</th>
+                            <th class="bg-danger text-white fw-bold">🥉 TOTAL THIRDS</th>
+                            <th class="table-dark fw-bold text-black">COMBINED SUM</th>
+                        </tr>
+                    </thead>
+                    <tbody id="grandSummaryBody">
+                    </tbody>
+                    <tfoot id="grandSummaryFoot" class="table-light fw-bold border-dark text-center">
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<script>
+const standardsList = ["LKG", "UKG", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "TEACHER"];
+let matrixState = {};
+
+const metricsCombinations = [
+    { council: "WEST Council", type: "Headquarters" },
+    { council: "WEST Council", type: "Branch" },
+    { council: "EAST Council", type: "Headquarters" },
+    { council: "EAST Council", type: "Branch" }
+];
+
+function initBlankMatrix() {
+    matrixState = {};
+    standardsList.forEach(std => {
+        matrixState[std] = { "First": [], "Second": [], "Third": [] };
+    });
+}
+
+function loadSavedDatabaseMatrix() {
+    const council = document.getElementById("council").value;
+    const type = document.getElementById("type").value;
+
+    initBlankMatrix();
+
+    fetch(`/get-saved-matrix-results?council=${encodeURIComponent(council)}&type=${encodeURIComponent(type)}`)
+    .then(response => response.json())
+    .then(data => {
+        data.forEach(row => {
+            const std = row.standard;
+            const rank = row.prize_position;
+            
+            if (matrixState[std] && matrixState[std][rank]) {
+                matrixState[std][rank].push({
+                    id: row.participant_id,
+                    name: row.participant_name,
+                    church: row.church_name,
+                    place: row.place
+                });
+            }
+        });
+        renderMatrixTableStructure();
+        compileGlobalSummaryMetrics();
+    })
+    .catch(err => {
+        console.error("Error retrieving database contents: ", err);
+        renderMatrixTableStructure();
+    });
+}
+
+function renderMatrixTableStructure() {
+    const tbody = document.getElementById("matrixTableBody");
+    tbody.innerHTML = "";
+
+    standardsList.forEach(std => {
+        const data = matrixState[std];
+        
+        const generateTagsHTML = (winnersArray) => {
+            if (winnersArray.length === 0) return `<span class="text-muted text-center d-block small py-1">-- No Winner --</span>`;
+            return winnersArray.map(w => {
+                let badgeClass = "badge bg-primary-subtle text-primary border border-primary-subtle";
+                let badgeLabel = `<strong>[${w.id}]</strong> `;
+                let locationDetails = w.place ? `${w.church}, ${w.place}` : `${w.church}`;
+                return `
+                    <div class="prize-tag shadow-sm">
+                        <span class="${badgeClass} me-1">${badgeLabel}</span>
+                        ${w.name.toUpperCase()} <span class="text-muted mx-1">|</span> <small class="text-secondary font-monospace">${locationDetails.toUpperCase()}</small>
+                    </div>
+                `;
+            }).join('');
+        };
+
+        const tr = document.createElement("tr");
+        if (std === "TEACHER") {
+            tr.className = "bg-teacher table-info border-info fw-bold";
+        }
+        tr.innerHTML = `
+            <td class="text-center fw-bold bg-light border-end font-monospace fs-5">${std}</td>
+            <td class="bg-first">${generateTagsHTML(data.First)}</td>
+            <td class="bg-second">${generateTagsHTML(data.Second)}</td>
+            <td class="bg-third">${generateTagsHTML(data.Third)}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function compileGlobalSummaryMetrics() {
+    fetch('/get-all-competition-results') 
+    .then(res => res.json())
+    .then(allRows => {
+        
+        let stats = {};
+        metricsCombinations.forEach(c => {
+            const key = `${c.council.trim().toUpperCase()}|||${c.type.trim().toUpperCase()}`;
+            stats[key] = {
+                students: { First: 0, Second: 0, Third: 0 },
+                teachers: { First: 0, Second: 0, Third: 0 }
+            };
+        });
+
+        allRows.forEach(row => {
+            if (!row.council || !row.headquarters_branch || !row.prize_position) return;
+
+            const dbCouncil = row.council.trim().toUpperCase();
+            const dbType = row.headquarters_branch.trim().toUpperCase();
+            const key = `${dbCouncil}|||${dbType}`;
+            
+            if (stats[key]) {
+                let placement = row.prize_position.trim().toLowerCase();
+                if (placement === 'first' || placement === '1st') placement = 'First';
+                else if (placement === 'second' || placement === '2nd') placement = 'Second';
+                else if (placement === 'third' || placement === '3rd') placement = 'Third';
+                else return;
+
+                if (row.standard.trim().toUpperCase() === "TEACHER") {
+                    if (stats[key].teachers[placement] !== undefined) stats[key].teachers[placement]++;
+                } else {
+                    if (stats[key].students[placement] !== undefined) stats[key].students[placement]++;
+                }
+            }
+        });
+
+        const studentTbody = document.getElementById("studentSummaryBody");
+        const teacherTbody = document.getElementById("teacherSummaryBody");
+        const grandTbody = document.getElementById("grandSummaryBody");
+        
+        studentTbody.innerHTML = "";
+        teacherTbody.innerHTML = "";
+        grandTbody.innerHTML = "";
+
+        let totSFirst = 0, totSSecond = 0, totSThird = 0, totSGrand = 0;
+        let totTFirst = 0, totTSecond = 0, totTThird = 0, totTGrand = 0;
+        let totGFirst = 0, totGSecond = 0, totGThird = 0, totGGrand = 0;
+
+        metricsCombinations.forEach(c => {
+            const lookupKey = `${c.council.trim().toUpperCase()}|||${c.type.trim().toUpperCase()}`;
+            const data = stats[lookupKey];
+
+            const sFirst = data.students.First;
+            const sSecond = data.students.Second;
+            const sThird = data.students.Third;
+            const sTotal = sFirst + sSecond + sThird;
+
+            totSFirst += sFirst; totSSecond += sSecond; totSThird += sThird; totSGrand += sTotal;
+
+            const trStudent = document.createElement("tr");
+            trStudent.innerHTML = `
+                <td class="fw-bold text-start ps-3">${c.council}</td>
+                <td><span class="badge bg-light text-dark border">${c.type}</span></td>
+                <td class="fw-semibold text-warning-emphasis">${sFirst}</td>
+                <td class="fw-semibold text-secondary">${sSecond}</td>
+                <td class="fw-semibold text-danger">${sThird}</td>
+                <td class="fw-bold table-secondary text-black">${sTotal}</td>
+            `;
+            studentTbody.appendChild(trStudent);
+
+            const tFirst = data.teachers.First;
+            const tSecond = data.teachers.Second;
+            const tThird = data.teachers.Third;
+            const tTotal = tFirst + tSecond + tThird;
+
+            totTFirst += tFirst; totTSecond += tSecond; totTThird += tThird; totTGrand += tTotal;
+
+            const trTeacher = document.createElement("tr");
+            trTeacher.innerHTML = `
+                <td class="fw-bold text-start ps-3">${c.council}</td>
+                <td><span class="badge bg-light text-dark border">${c.type}</span></td>
+                <td class="fw-semibold text-warning-emphasis">${tFirst}</td>
+                <td class="fw-semibold text-secondary">${tSecond}</td>
+                <td class="fw-semibold text-danger">${tThird}</td>
+                <td class="fw-bold table-secondary text-black">${tTotal}</td>
+            `;
+            teacherTbody.appendChild(trTeacher);
+
+            const grandFirst = sFirst + tFirst;
+            const grandSecond = sSecond + tSecond;
+            const grandThird = sThird + tThird;
+            const totalSum = grandFirst + grandSecond + grandThird;
+
+            totGFirst += grandFirst; totGSecond += grandSecond; totGThird += grandThird; totGGrand += totalSum;
+
+            const trGrand = document.createElement("tr");
+            trGrand.className = "table-light fw-bold border-secondary-subtle";
+            trGrand.innerHTML = `
+                <td class="text-start ps-3">${c.council}</td>
+                <td><span class="badge bg-secondary-subtle text-dark">${c.type}</span></td>
+                <td class="text-warning-emphasis bg-warning-subtle">${grandFirst}</td>
+                <td class="text-secondary bg-light">${grandSecond}</td>
+                <td class="text-danger bg-danger-subtle">${grandThird}</td>
+                <td class="table-dark text-black font-monospace">${totalSum}</td>
+            `;
+            grandTbody.appendChild(trGrand);
+        });
+
+        document.getElementById("studentSummaryFoot").innerHTML = `
+            <tr>
+                <td colspan="2" class="text-end">TOTAL:</td>
+                <td>${totSFirst}</td>
+                <td>${totSSecond}</td>
+                <td>${totSThird}</td>
+                <td class="table-dark text-black">${totSGrand}</td>
+            </tr>
+        `;
+        
+        document.getElementById("teacherSummaryFoot").innerHTML = `
+            <tr>
+                <td colspan="2" class="text-end">TOTAL:</td>
+                <td>${totTFirst}</td>
+                <td>${totTSecond}</td>
+                <td>${totTThird}</td>
+                <td class="table-dark text-black">${totTGrand}</td>
+            </tr>
+        `;
+
+        document.getElementById("grandSummaryFoot").innerHTML = `
+            <tr style="border-top: 2px double #000;">
+                <td colspan="2" class="text-end">GRAND TOTAL:</td>
+                <td class="bg-warning-subtle">${totGFirst}</td>
+                <td class="bg-light">${totGSecond}</td>
+                <td class="bg-danger-subtle">${totGThird}</td>
+                <td class="table-dark text-black font-monospace">${totGGrand}</td>
+            </tr>
+        `;
+    })
+    .catch(e => console.error("Analytical processing error: ", e));
+}
+
+function triggerFullPDFDownload() {
+    document.body.classList.remove('print-summary-only-mode');
+    document.body.classList.add('print-full-report-mode');
+    
+    let styleEl = document.getElementById('dynamicPrintLayoutTag');
+    if(!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'dynamicPrintLayoutTag';
+        document.head.appendChild(styleEl);
+    }
+    styleEl.innerHTML = "@page { size: A4 portrait; margin: 12mm 12mm; }";
+
+    const councilVal = document.getElementById("council").value;
+    const typeVal = document.getElementById("type").value;
+    document.getElementById("printDynamicSubtitle").innerText = `${councilVal} — ${typeVal} Full Master Ledger Sheet`;
+    
+    window.print();
+}
+
+function triggerSummaryOnlyPDFDownload() {
+    document.body.classList.remove('print-full-report-mode');
+    document.body.classList.add('print-summary-only-mode');
+    
+    let styleEl = document.getElementById('dynamicPrintLayoutTag');
+    if(!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'dynamicPrintLayoutTag';
+        document.head.appendChild(styleEl);
+    }
+    styleEl.innerHTML = "@page { size: A4 landscape; margin: 6mm 6mm; }";
+
+    document.getElementById("printDynamicSubtitle").innerText = "Global Placements Summary & Breakdown Report Ledger";
+    
+    window.print();
+}
+
+$(document).ready(function() {
+    loadSavedDatabaseMatrix();
+});
+</script>
+
+</body>
+</html>
